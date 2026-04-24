@@ -1,0 +1,151 @@
+{
+  "statusCode": 200,
+  "data": {
+    "courses": [
+      {
+        "_id": "69aaf85ed2c69a507ba793ad",
+        "title": "3.0 Job Ready AI Powered Cohort",
+        "metaData": {
+          "description": "Build real scalable products used by thousands of users, learn AI engineering, full stack development, DevOps, system design, and startup building all inside one live Hindi cohort.",
+          "language": "English",
+          "thumbnail": "https://ik.imagekit.io/sheryians/courses/cohort3thumbnai_E9AGbX-rJ.webp",
+          "displayVideo": "https://youtu.be/xGtcHcPVb0o",
+          "displayTags": ["Product Building", "Community Access", "Gamified Learning"]
+        },
+        "price": 17998,
+        "discountPercentage": "50",
+        "state": "published",
+        "type": "live"
+      },
+      {
+        "_id": "68da779296b89547293c7a26",
+        "title": "Data Science and Analytics with GenAI",
+        "metaData": {
+          "description": "Gain hands-on experience in data analysis, visualization, and AI integration.",
+          "language": "Hindi",
+          "thumbnail": "https://ik.imagekit.io/sheryians/courses_gif/undefined-Image_2_QUZ-yb_0T.jpeg",
+          "displayVideo": "https://www.youtube.com/embed/_0BkXVe3yEA?si=TmWODrQuVonEoT-t",
+          "displayTags": ["Machine Learning", "Deep Learning", "Gen-AI", "Python"]
+        },
+        "price": 14891,
+        "discountPercentage": "53",
+        "state": "published",
+        "type": "self-paced"
+      },
+      {
+        "_id": "6867e4147574bb008a1b3040",
+        "title": "2.0 Job Ready AI Powered Cohort",
+        "metaData": {
+          "description": "Become a job-ready software engineer with our Cohort 2.0. An intensive program covering MERN stack development, DSA, and aptitude training.",
+          "language": "Hindi",
+          "thumbnail": "https://ik.imagekit.io/sheryians/Cohort%202.0/cohort-3_ekZjBiRzc-2_76HU4-Mz5z.jpeg?updatedAt=1757741949621",
+          "displayVideo": "https://youtu.be/xGtcHcPVb0o?si=AiSobAUhIqfagI0o",
+          "displayTags": [
+            "Job Ready",
+            "MERN Stack",
+            "DSA With JS",
+            "Placement Focused",
+            "AI Powered",
+            "Aptitude"
+          ]
+        },
+        "price": 11998,
+        "discountPercentage": "50",
+        "state": "published",
+        "type": "live"
+      },
+      {
+        "_id": "68470b75165226c4889001e8",
+        "title": "DSA Domination Cohort",
+        "metaData": {
+          "description": "Master Data Structures and Algorithms in any language — C++, Java, Python, or JavaScript. Boost your logical reasoning and problem solving skills.",
+          "language": "Hindi",
+          "thumbnail": "https://ik.imagekit.io/sheryians/courses_gif/undefined-web-dsa-thumb-10_ZKtPNgmW_.webp_Zhu2w1to5h.jpeg",
+          "displayVideo": "https://www.youtube.com/embed/hcxdmWyQEKY?si=xqrt9nRm8EAVyu_u",
+          "displayTags": ["Logic Building"]
+        },
+        "price": 7500,
+        "discountPercentage": "12",
+        "state": "published",
+        "type": "live"
+      },
+      {
+        "_id": "6775253edb7d074fe7a88b85",
+        "title": "Job Ready AI Powered Cohort: Web + DSA + Aptitude",
+        "metaData": {
+          "description": "Become a job-ready software engineer with our Cohort. An intensive program covering MERN stack development, DSA, and aptitude training.",
+          "language": "Hindi",
+          "thumbnail": "https://ik.imagekit.io/sheryians/courses_gif/undefined-IMG_5100_7vO7pODI9.JPG",
+          "displayVideo": "https://www.youtube.com/embed/GfAaK8dLtYs?si=0hNtPDIF__HlZzfp",
+          "displayTags": ["MERN Stack", "DSA With JS", "Placement Focused", "AI Powered", "Aptitude"]
+        },
+        "price": 11998,
+        "discountPercentage": "50",
+        "state": "published",
+        "type": "live"
+      },
+      {
+        "_id": "66ffae739b0234ad8d15ea87",
+        "title": "Three.JS Domination",
+        "metaData": {
+          "description": "An immersive program designed to help you master interactive 3D design, real-time animations, and web-based visual storytelling.",
+          "language": "Hindi",
+          "thumbnail": "https://ik.imagekit.io/sheryians/courses_gif/undefined-maxresdefault_5-AHh9_1Y.jpg",
+          "displayVideo": "https://youtu.be/B-4eN1Pb7qo?si=gHPONgMwaU5Xgcrn",
+          "displayTags": ["ANIMATION"]
+        },
+        "price": 4236,
+        "discountPercentage": "50",
+        "state": "published",
+        "type": "self-paced"
+      },
+      {
+        "_id": "66bd174049ff6f892bacdd47",
+        "title": "Java & DSA Domination",
+        "metaData": {
+          "description": "Ace your coding interviews. Master Java and DSA with our expert-led course, packed with interactive lessons and practice tests.",
+          "language": "Hindi",
+          "thumbnail": "https://ik.imagekit.io/sheryians/courses_gif/undefined-javaas_Large_jY0Wighav__6PygWBZQ.jpeg",
+          "displayVideo": "https://youtu.be/MwSRNygjiKU?si=LPzVUCtbkgd6hS98",
+          "displayTags": ["JAVA", "Logic Building", "Deep Learning"]
+        },
+        "price": 10000,
+        "discountPercentage": "57.64",
+        "state": "published",
+        "type": "self-paced"
+      },
+      {
+        "_id": "6686990a672568d40bfbac7b",
+        "title": "Aptitude & Reasoning for Campus Placements",
+        "metaData": {
+          "description": "Ace your campus placements. Master aptitude and reasoning with our expert-led course, packed with interactive lessons and practice tests.",
+          "language": "Hindi",
+          "thumbnail": "https://ik.imagekit.io/sheryians/courses_gif/undefined-apti_reasoning_45vyAnZ4y.jpeg",
+          "displayVideo": "https://www.youtube.com/embed/DVbvFQ1Awh8?si=UqrmDLb4hGcj8Ybo?autoplay=1&vq=hd720",
+          "displayTags": ["Placement Focused", "Aptitude", "Deep Learning"]
+        },
+        "price": 2000,
+        "discountPercentage": "53.4",
+        "state": "published",
+        "type": "self-paced"
+      },
+      {
+        "_id": "6536a79daa4702e3ac0b465e",
+        "title": "Front-End Domination: Create Anything with Code",
+        "metaData": {
+          "description": "Dominate the web game with Front-End Domination. Nail HTML, CSS, JS, solve real problems, dive into fun projects, and be interview-ready.",
+          "language": "Hindi",
+          "thumbnail": "https://ik.imagekit.io/sheryians/courses_gif/Front-End_Domination__Create_Anything_with_Code-FRONTENDTHUBNAIL_Wf8WqcNJx.jpg",
+          "displayVideo": "https://www.youtube.com/embed/GD0h-bUGHto?si=i11HbOi-jQHXTcBO",
+          "displayTags": ["Frontend", "Animations", "Creative Webdev"]
+        },
+        "price": 10269.69,
+        "discountPercentage": "67",
+        "state": "published",
+        "type": "self-paced"
+      }
+    ]
+  },
+  "message": "Courses fetched successfully",
+  "success": true
+}

@@ -1,0 +1,597 @@
+﻿{
+    "statusCode":  200,
+    "data":  {
+                 "course":  {
+                                "_id":  "69aaf85ed2c69a507ba793ad",
+                                "title":  "3.0 Job Ready AI Powered Cohort",
+                                "metaData":  {
+                                                 "description":  "Build real scalable products used by thousands of users, learn AI engineering, full stack development, DevOps, system design, and startup building all inside one live Hindi cohort.",
+                                                 "category":  [
+                                                                  "Web-Development",
+                                                                  "DSA",
+                                                                  "MERN",
+                                                                  "Aptitute"
+                                                              ],
+                                                 "difficulty":  "beginner",
+                                                 "language":  "English",
+                                                 "thumbnail":  "https://ik.imagekit.io/sheryians/courses/cohort3thumbnai_E9AGbX-rJ.webp",
+                                                 "displayVideo":  "https://youtu.be/xGtcHcPVb0o",
+                                                 "displayTags":  [
+                                                                     "Product Building",
+                                                                     "Community Access",
+                                                                     "Gamified Learning"
+                                                                 ],
+                                                 "techStack":  [
+                                                                   "Node JS",
+                                                                   "Mongo DB",
+                                                                   "React JS"
+                                                               ],
+                                                 "requirements":  [
+                                                                      "Basic programming understanding is recommended",
+                                                                      "beginners are welcome",
+                                                                      "be ready to learn fast",
+                                                                      "stay consistent",
+                                                                      "and take responsibility for your progress"
+                                                                  ],
+                                                 "outcomes":  [
+                                                                  "Fully Responsive Website",
+                                                                  "React Developer",
+                                                                  "Frontend Developer"
+                                                              ],
+                                                 "certificate":  true,
+                                                 "features":  [
+                                                                  {
+                                                                      "icon":  "Clock3",
+                                                                      "count":  "6 Months",
+                                                                      "title":  "Course Duration"
+                                                                  }
+                                                              ],
+                                                 "content":  [
+                                                                 {
+                                                                     "title":  "Internet, Networking \u0026 Web Fundamentals",
+                                                                     "description":  "Understand how the web works from low-level networking to browser systems.",
+                                                                     "content":  [
+                                                                                     "Evolution of the modern web",
+                                                                                     "Network communication basics",
+                                                                                     "Domains, IP addresses \u0026 DNS",
+                                                                                     "How data travels across the internet",
+                                                                                     "Client vs server responsibilities",
+                                                                                     "HTTP request–response lifecycle",
+                                                                                     "Website rendering flow",
+                                                                                     "Static vs dynamic applications",
+                                                                                     "TCP fundamentals \u0026 reliability",
+                                                                                     "UDP fast transmission model",
+                                                                                     "Connection handshakes",
+                                                                                     "TCP vs UDP use cases"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "HTTP, HTTPS \u0026 Web Security",
+                                                                     "description":  "Secure communication fundamentals.",
+                                                                     "content":  [
+                                                                                     "HTTP protocol \u0026 status codes",
+                                                                                     "HTTPS encryption workflow",
+                                                                                     "SSL/TLS security layers",
+                                                                                     "Proxy and reverse proxy architecture"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Developer Environment",
+                                                                     "description":  "Professional setup.",
+                                                                     "content":  [
+                                                                                     "VS Code professional setup",
+                                                                                     "Productivity extensions",
+                                                                                     "Browser developer tools",
+                                                                                     "Local development servers"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "HTML, Accessibility \u0026 SEO",
+                                                                     "description":  "Structure content.",
+                                                                     "content":  [
+                                                                                     "Semantic layout design",
+                                                                                     "Content hierarchy principles",
+                                                                                     "Forms and validation systems",
+                                                                                     "Accessibility \u0026 SEO foundations"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Browser Rendering \u0026 Performance",
+                                                                     "description":  "How browsers work.",
+                                                                     "content":  [
+                                                                                     "DOM \u0026 CSSOM processing",
+                                                                                     "Render tree construction",
+                                                                                     "Reflow and repaint behavior",
+                                                                                     "Performance optimization basics"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "CSS Foundations",
+                                                                     "content":  [
+                                                                                     "CSS selectors \u0026 styling logic",
+                                                                                     "Box model and layout mechanics",
+                                                                                     "Cascade, inheritance \u0026 specificity",
+                                                                                     "Responsive measurement systems",
+                                                                                     "CSS variables \u0026 theming"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Responsive Design",
+                                                                     "content":  [
+                                                                                     "Mobile-first design strategy",
+                                                                                     "Media queries \u0026 breakpoints",
+                                                                                     "Fluid typography systems",
+                                                                                     "Responsive media handling"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Layout Systems",
+                                                                     "content":  [
+                                                                                     "Flexbox alignment systems",
+                                                                                     "CSS Grid layouts",
+                                                                                     "Positioning strategies",
+                                                                                     "Modern responsive patterns"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "CSS Architecture \u0026 Frameworks",
+                                                                     "content":  [
+                                                                                     "BEM naming methodology",
+                                                                                     "Component-driven styling",
+                                                                                     "Utility-first systems",
+                                                                                     "Project structure best practices",
+                                                                                     "TailwindCSS workflow",
+                                                                                     "Bootstrap component systems",
+                                                                                     "Responsive grid frameworks",
+                                                                                     "Choosing the right framework"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Animations \u0026 UI Motion",
+                                                                     "content":  [
+                                                                                     "CSS transitions",
+                                                                                     "Transform animations",
+                                                                                     "Keyframe motion systems",
+                                                                                     "Animation performance optimization"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "JavaScript Fundamentals",
+                                                                     "content":  [
+                                                                                     "JavaScript runtime model",
+                                                                                     "Variables and data types",
+                                                                                     "Debugging workflows",
+                                                                                     "Clean coding practices"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Operators \u0026 Logic",
+                                                                     "content":  [
+                                                                                     "Arithmetic and comparison operators",
+                                                                                     "Logical expressions",
+                                                                                     "Type coercion behavior",
+                                                                                     "Truthy and falsy evaluation"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Control Flow",
+                                                                     "content":  [
+                                                                                     "Conditional branching",
+                                                                                     "Looping strategies",
+                                                                                     "Switch-case workflows",
+                                                                                     "Flow control techniques"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Functions \u0026 Closures",
+                                                                     "content":  [
+                                                                                     "Function declarations \u0026 expressions",
+                                                                                     "Parameters, scope \u0026 closures",
+                                                                                     "Arrow functions",
+                                                                                     "Recursion fundamentals"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Arrays",
+                                                                     "content":  [
+                                                                                     "Array operations \u0026 transformations",
+                                                                                     "Iteration patterns",
+                                                                                     "Multidimensional arrays",
+                                                                                     "Practical problem-solving"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Array Methods",
+                                                                     "content":  [
+                                                                                     "map() transformations",
+                                                                                     "filter() operations",
+                                                                                     "reduce() aggregations",
+                                                                                     "Sorting \u0026 slicing techniques"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Objects",
+                                                                     "content":  [
+                                                                                     "Object properties \u0026 methods",
+                                                                                     "Dynamic property handling",
+                                                                                     "Nested object modeling",
+                                                                                     "Object iteration techniques"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Object Utilities",
+                                                                     "content":  [
+                                                                                     "Object.keys(), values(), entries()",
+                                                                                     "Object.assign() merging",
+                                                                                     "Immutability with freeze()",
+                                                                                     "Data sealing techniques"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "TypeScript",
+                                                                     "content":  [
+                                                                                     "TypeScript fundamentals",
+                                                                                     "Static typing systems",
+                                                                                     "Interfaces \u0026 type aliases",
+                                                                                     "Generics for reusable logic"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "React Fundamentals",
+                                                                     "content":  [
+                                                                                     "SPA architecture",
+                                                                                     "Virtual DOM performance",
+                                                                                     "JSX syntax",
+                                                                                     "Component-based design",
+                                                                                     "Why React exists and problems with manual DOM manipulation",
+                                                                                     "Declarative vs Imperative UI",
+                                                                                     "Real DOM vs Virtual DOM",
+                                                                                     "Setting up React with Vite",
+                                                                                     "Project structure (src, components, assets, public)"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "React Core Concepts",
+                                                                     "content":  [
+                                                                                     "Functional components",
+                                                                                     "Props",
+                                                                                     "Rendering lists",
+                                                                                     "Keys",
+                                                                                     "useState",
+                                                                                     "Events",
+                                                                                     "Conditional rendering"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "React Advanced",
+                                                                     "content":  [
+                                                                                     "useEffect",
+                                                                                     "Custom hooks",
+                                                                                     "useMemo/useCallback",
+                                                                                     "Context API",
+                                                                                     "Redux",
+                                                                                     "Zustand",
+                                                                                     "React Router"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "React Performance \u0026 Forms",
+                                                                     "content":  [
+                                                                                     "React Hook Form",
+                                                                                     "Zod validation",
+                                                                                     "React.memo",
+                                                                                     "Code splitting",
+                                                                                     "Performance debugging"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Next.js",
+                                                                     "content":  [
+                                                                                     "Next.js vs React",
+                                                                                     "Routing",
+                                                                                     "SSR/SSG/ISR",
+                                                                                     "API routes",
+                                                                                     "Server actions"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Node.js Fundamentals",
+                                                                     "content":  [
+                                                                                     "Node.js runtime",
+                                                                                     "NPM",
+                                                                                     "Scripts",
+                                                                                     "Environment setup"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Backend Core \u0026 Express",
+                                                                     "content":  [
+                                                                                     "HTTP server",
+                                                                                     "Express",
+                                                                                     "Routing",
+                                                                                     "MVC"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Middleware \u0026 Security",
+                                                                     "content":  [
+                                                                                     "Middleware",
+                                                                                     "Error handling",
+                                                                                     "CORS",
+                                                                                     "Helmet"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Databases \u0026 MongoDB",
+                                                                     "content":  [
+                                                                                     "MongoDB",
+                                                                                     "Mongoose",
+                                                                                     "Relations",
+                                                                                     "Populate"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "API Design",
+                                                                     "content":  [
+                                                                                     "REST",
+                                                                                     "Validation",
+                                                                                     "Sanitization",
+                                                                                     "Status codes"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Backend Performance \u0026 Realtime",
+                                                                     "content":  [
+                                                                                     "Redis",
+                                                                                     "Caching",
+                                                                                     "WebSockets",
+                                                                                     "Socket.io"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Authentication \u0026 Production",
+                                                                     "content":  [
+                                                                                     "JWT",
+                                                                                     "bcrypt",
+                                                                                     "RBAC",
+                                                                                     "Deployment"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "LLM Fundamentals",
+                                                                     "content":  [
+                                                                                     "Tokens",
+                                                                                     "Temperature",
+                                                                                     "Hallucination",
+                                                                                     "Context"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Prompt Engineering",
+                                                                     "content":  [
+                                                                                     "Prompt design",
+                                                                                     "Few-shot",
+                                                                                     "Formatting",
+                                                                                     "Instructions"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Structured Outputs \u0026 Validation",
+                                                                     "content":  [
+                                                                                     "JSON outputs",
+                                                                                     "Zod",
+                                                                                     "Validation",
+                                                                                     "Retries"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "RAG \u0026 Vector Systems",
+                                                                     "content":  [
+                                                                                     "Embeddings",
+                                                                                     "Vector DB",
+                                                                                     "RAG",
+                                                                                     "Search"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "AI Agents",
+                                                                     "content":  [
+                                                                                     "Agents",
+                                                                                     "Multi-agent",
+                                                                                     "Workflows"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "DevOps \u0026 Linux",
+                                                                     "content":  [
+                                                                                     "Linux",
+                                                                                     "SSH",
+                                                                                     "PM2",
+                                                                                     "Logs"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Docker",
+                                                                     "content":  [
+                                                                                     "Docker",
+                                                                                     "Images",
+                                                                                     "Containers",
+                                                                                     "Compose"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Cloud \u0026 AWS",
+                                                                     "content":  [
+                                                                                     "EC2",
+                                                                                     "Scaling",
+                                                                                     "Security groups",
+                                                                                     "Load balancing"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "CI/CD",
+                                                                     "content":  [
+                                                                                     "GitHub Actions",
+                                                                                     "Pipelines",
+                                                                                     "Automation"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "DSA Fundamentals",
+                                                                     "content":  [
+                                                                                     "Arrays",
+                                                                                     "Strings",
+                                                                                     "OOP",
+                                                                                     "Math basics"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Advanced DSA",
+                                                                     "content":  [
+                                                                                     "Sorting",
+                                                                                     "Binary search",
+                                                                                     "Hashing",
+                                                                                     "Linked list",
+                                                                                     "Stack \u0026 Queue",
+                                                                                     "Trees",
+                                                                                     "Backtracking"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Complexity \u0026 Optimization",
+                                                                     "content":  [
+                                                                                     "Big-O",
+                                                                                     "Time/space complexity",
+                                                                                     "Optimization"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Aptitude",
+                                                                     "content":  [
+                                                                                     "Percentages",
+                                                                                     "Ratio",
+                                                                                     "Speed",
+                                                                                     "Probability"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Reasoning",
+                                                                     "content":  [
+                                                                                     "Logical",
+                                                                                     "Arrangements",
+                                                                                     "Verbal"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "System Design Foundations",
+                                                                     "content":  [
+                                                                                     "HLD vs LLD",
+                                                                                     "Requirements",
+                                                                                     "Architecture"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Low Level Design",
+                                                                     "content":  [
+                                                                                     "OOP",
+                                                                                     "SOLID",
+                                                                                     "UML",
+                                                                                     "Design patterns"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "High Level Design",
+                                                                     "content":  [
+                                                                                     "Scaling",
+                                                                                     "Databases",
+                                                                                     "Caching",
+                                                                                     "Microservices"
+                                                                                 ]
+                                                                 },
+                                                                 {
+                                                                     "title":  "Distributed Systems",
+                                                                     "content":  [
+                                                                                     "Fault tolerance",
+                                                                                     "Queues",
+                                                                                     "Real systems"
+                                                                                 ]
+                                                                 }
+                                                             ],
+                                                 "faqs":  [
+                                                              {
+                                                                  "que":  "Is this course beginner friendly?",
+                                                                  "ans":  "Yes. The program starts from fundamentals and gradually moves to advanced topics."
+                                                              },
+                                                              {
+                                                                  "que":  "What language will the classes be in?",
+                                                                  "ans":  "Classes will be conducted in Hindi so concepts are easier to understand."
+                                                              },
+                                                              {
+                                                                  "que":  "What is the schedule?",
+                                                                  "ans":  "Live classes will be held Monday to Saturday at 8:30 PM."
+                                                              },
+                                                              {
+                                                                  "que":  "How long is the program?",
+                                                                  "ans":  "The cohort includes 250+ hours of structured learning."
+                                                              },
+                                                              {
+                                                                  "que":  "Will I get a certificate?",
+                                                                  "ans":  "Yes. Students who complete the program will receive a certification."
+                                                              },
+                                                              {
+                                                                  "que":  "Do I need prior coding knowledge?",
+                                                                  "ans":  "No. Beginners can join."
+                                                              }
+                                                          ]
+                                             },
+                                "instructors":  [
+                                                    {
+                                                        "id":  "64a82b9e8cef2f3cbe7ff34a",
+                                                        "name":  "Sheryians"
+                                                    }
+                                                ],
+                                "price":  17998,
+                                "discountPercentage":  "50",
+                                "state":  "published",
+                                "duration_weeks":  30,
+                                "type":  "live",
+                                "batches":  {
+                                                "_id":  "69b2c629d92ec16308d1a4c8",
+                                                "name":  "3J-01",
+                                                "course":  "69aaf85ed2c69a507ba793ad",
+                                                "startDate":  "2026-05-01T00:00:00.000Z",
+                                                "endDate":  "2027-05-01T00:00:00.000Z",
+                                                "enrollmentEndDate":  "2027-04-19T00:00:00.000Z",
+                                                "status":  "ongoing",
+                                                "priceTitle":  "First Time Offer",
+                                                "price":  10619,
+                                                "discount":  0,
+                                                "discountType":  "percentage",
+                                                "finalPrice":  10619
+                                            },
+                                "coupons":  [
+                                                {
+                                                    "_id":  "69c22c04896a51f221b8b7ee",
+                                                    "code":  "50OFFCH3FCH42",
+                                                    "type":  "fixed",
+                                                    "value":  5309,
+                                                    "validFrom":  "2026-03-23T19:30:00.000Z",
+                                                    "validUntil":  "2027-04-27T06:15:00.000Z",
+                                                    "usageLimit":  383,
+                                                    "perUserLimit":  1,
+                                                    "applicableCourse":  "69aaf85ed2c69a507ba793ad",
+                                                    "applicableBatches":  [
+                                                                              "69b2c629d92ec16308d1a4c8"
+                                                                          ],
+                                                    "isActive":  true,
+                                                    "createdAt":  "2026-03-24T06:15:32.987Z",
+                                                    "updatedAt":  "2026-04-23T14:18:26.561Z",
+                                                    "__v":  0
+                                                }
+                                            ]
+                            }
+             },
+    "message":  "Course fetched successfully",
+    "success":  true
+}
+
