@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertCircle, ArrowRight, Brain, Lock, Mail, User } from 'lucide-react';
+import { ArrowRight, AlertCircle, Brain, Lock, Mail } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
@@ -16,20 +16,17 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const RegisterPage = () => {
+const LoginPage = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
     email: '',
     password: '',
-    confirmPassword: '',
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    document.title = 'Register | Design School';
+    document.title = 'Sign In | Design School';
   }, []);
 
   const handleGoogleLogin = useGoogleLogin({
@@ -75,22 +72,9 @@ const RegisterPage = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const firstName = formData.firstName.trim();
-    const lastName = formData.lastName.trim();
     const email = formData.email.trim().toLowerCase();
-
-    if (!firstName || !lastName || !email || !formData.password || !formData.confirmPassword) {
-      setError('Please fill in all fields.');
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
-
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long.');
+    if (!email || !formData.password) {
+      setError('Please enter your email and password.');
       return;
     }
 
@@ -98,28 +82,27 @@ const RegisterPage = () => {
     setError('');
 
     try {
-      const { response, payload } = await apiFetch('auth/register/', {
+      const { response, payload } = await apiFetch('auth/login/', {
         method: 'POST',
         body: {
-          first_name: firstName,
-          last_name: lastName,
           email,
           password: formData.password,
         },
       });
 
       if (!response.ok) {
-        throw new Error(extractApiError(payload, 'Unable to create your account.'));
+        throw new Error(extractApiError(payload, 'Unable to sign you in.'));
       }
 
-      navigate('/verify-phone', {
-        state: {
-          email,
-          firstName,
-        },
-      });
+      if (!payload.user?.is_phone_verified) {
+        navigate('/verify-phone', { state: { email: payload.user?.email } });
+        return;
+      }
+
+      storeAuthSession(payload);
+      navigate('/dashboard');
     } catch (err) {
-      setError(err.message || 'Unable to create your account.');
+      setError(err.message || 'Unable to sign you in.');
     } finally {
       setIsLoading(false);
     }
@@ -151,13 +134,13 @@ const RegisterPage = () => {
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-75" />
                     <span className="relative inline-flex h-2 w-2 rounded-full bg-brand" />
                   </span>
-                  Join the Cohort
+                  Student Workspace
                 </div>
                 <h1 className="mb-6 text-4xl font-bold leading-[1.1] md:text-5xl">
-                  Build a serious learning system around your <span className="bg-gradient-to-r from-white to-zinc-500 bg-clip-text text-transparent">creative career.</span>
+                  Pick up your learning where you <span className="bg-gradient-to-r from-white to-zinc-500 bg-clip-text text-transparent">left off.</span>
                 </h1>
                 <p className="text-lg leading-relaxed text-zinc-400">
-                  Create your account, verify your phone, and move into a focused student workspace built around courses, recordings, assignments, and certificates.
+                  Access your live courses, recent recordings, assignment deadlines, and certificate progress from one focused workspace.
                 </p>
               </motion.div>
             </div>
@@ -166,7 +149,7 @@ const RegisterPage = () => {
           <div className="flex items-center gap-4 text-sm text-zinc-500">
             <span>© 2026 Design School</span>
             <span className="h-1 w-1 rounded-full bg-zinc-700" />
-            <span>Secure onboarding</span>
+            <span>Secure sign in</span>
           </div>
         </div>
 
@@ -177,13 +160,13 @@ const RegisterPage = () => {
                 <Brain className="h-8 w-8 text-brand" />
                 <span className="text-xl font-bold tracking-tight">Design School</span>
               </Link>
-              <h2 className="text-2xl font-bold">Create your account</h2>
-              <p className="mt-2 text-center text-zinc-400">Join the student workspace and start your learning journey.</p>
+              <h2 className="text-2xl font-bold">Welcome back</h2>
+              <p className="mt-2 text-center text-zinc-400">Sign in to access your dashboard and active courses.</p>
             </div>
 
             <div className="mb-10 hidden lg:block">
-              <h2 className="mb-2 text-3xl font-bold tracking-tight">Create an account</h2>
-              <p className="text-zinc-400">We’ll get you verified, enrolled, and into your student dashboard fast.</p>
+              <h2 className="mb-2 text-3xl font-bold tracking-tight">Sign in to your account</h2>
+              <p className="text-zinc-400">Continue into your student dashboard and course workspace.</p>
             </div>
 
             <button
@@ -198,7 +181,7 @@ const RegisterPage = () => {
 
             <div className="my-8 flex items-center">
               <div className="flex-1 border-t border-white/10" />
-              <span className="px-4 text-xs font-medium uppercase tracking-wider text-zinc-500">Or register with email</span>
+              <span className="px-4 text-xs font-medium uppercase tracking-wider text-zinc-500">Or sign in with email</span>
               <div className="flex-1 border-t border-white/10" />
             </div>
 
@@ -219,42 +202,6 @@ const RegisterPage = () => {
             </AnimatePresence>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="ml-1 text-sm font-medium text-zinc-400">First Name</label>
-                  <div className="group relative">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-zinc-500 transition-colors group-focus-within:text-brand">
-                      <User className="h-5 w-5" />
-                    </div>
-                    <input
-                      type="text"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      className="w-full rounded-xl border border-white/10 bg-white/[0.03] py-3 pl-12 pr-4 text-white placeholder-zinc-600 transition-all duration-300 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand/50"
-                      placeholder="John"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="ml-1 text-sm font-medium text-zinc-400">Last Name</label>
-                  <div className="group relative">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-zinc-500 transition-colors group-focus-within:text-brand">
-                      <User className="h-5 w-5" />
-                    </div>
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      className="w-full rounded-xl border border-white/10 bg-white/[0.03] py-3 pl-12 pr-4 text-white placeholder-zinc-600 transition-all duration-300 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand/50"
-                      placeholder="Doe"
-                    />
-                  </div>
-                </div>
-              </div>
-
               <div className="space-y-2">
                 <label className="ml-1 text-sm font-medium text-zinc-400">Email Address</label>
                 <div className="group relative">
@@ -267,7 +214,7 @@ const RegisterPage = () => {
                     value={formData.email}
                     onChange={handleChange}
                     className="w-full rounded-xl border border-white/10 bg-white/[0.03] py-3 pl-12 pr-4 text-white placeholder-zinc-600 transition-all duration-300 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand/50"
-                    placeholder="john@example.com"
+                    placeholder="you@example.com"
                   />
                 </div>
               </div>
@@ -284,24 +231,7 @@ const RegisterPage = () => {
                     value={formData.password}
                     onChange={handleChange}
                     className="w-full rounded-xl border border-white/10 bg-white/[0.03] py-3 pl-12 pr-4 text-white placeholder-zinc-600 transition-all duration-300 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand/50"
-                    placeholder="Create a secure password"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="ml-1 text-sm font-medium text-zinc-400">Confirm Password</label>
-                <div className="group relative">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-zinc-500 transition-colors group-focus-within:text-brand">
-                    <Lock className="h-5 w-5" />
-                  </div>
-                  <input
-                    type="password"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.03] py-3 pl-12 pr-4 text-white placeholder-zinc-600 transition-all duration-300 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand/50"
-                    placeholder="Repeat your password"
+                    placeholder="Enter your password"
                   />
                 </div>
               </div>
@@ -315,7 +245,7 @@ const RegisterPage = () => {
                   <div className="h-6 w-6 animate-spin rounded-full border-2 border-black/30 border-t-black" />
                 ) : (
                   <>
-                    Create Account
+                    Sign In
                     <ArrowRight className="h-5 w-5" />
                   </>
                 )}
@@ -323,9 +253,9 @@ const RegisterPage = () => {
             </form>
 
             <p className="mt-8 text-center text-sm text-zinc-400">
-              Already have an account?{' '}
-              <Link to="/login" className="font-medium text-white underline decoration-white/30 underline-offset-4 transition-colors hover:text-brand">
-                Sign in
+              New here?{' '}
+              <Link to="/register" className="font-medium text-white underline decoration-white/30 underline-offset-4 transition-colors hover:text-brand">
+                Create an account
               </Link>
             </p>
           </motion.div>
@@ -335,4 +265,4 @@ const RegisterPage = () => {
   );
 };
 
-export default RegisterPage;
+export default LoginPage;

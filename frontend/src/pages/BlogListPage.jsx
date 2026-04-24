@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, Calendar, Clock3 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/sheryians/Navbar';
 import Footer from '../components/sheryians/Footer';
 import { apiUrl } from '../lib/api';
@@ -185,13 +186,13 @@ const BlogListPage = () => {
                         {post.excerpt}
                       </p>
 
-                      <a
-                        href="#"
+                      <Link
+                        to={`/blog/${post.slug || post.id}`}
                         className="mt-6 inline-flex items-center gap-2 text-base font-medium text-emerald-300 transition hover:text-emerald-200 md:text-lg"
                       >
                         Read Article
                         <ArrowRight className="h-5 w-5" />
-                      </a>
+                      </Link>
                     </div>
                   </article>
                 ))}

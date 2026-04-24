@@ -4,7 +4,7 @@ from .api_views import CategoryViewSet, CourseViewSet, CourseReviewViewSet
 
 router = DefaultRouter()
 router.register(r'categories', CategoryViewSet)
-router.register(r'courses', CourseViewSet)
+router.register(r'courses', CourseViewSet, basename='course')
 router.register(r'reviews', CourseReviewViewSet)
 
 urlpatterns = [

@@ -104,12 +104,9 @@ const FreeResourceDetailPage = () => {
     () => fallbackResources.find((item) => item.slug === resourceId || item.id === resourceId) || null,
     [fallbackResources, resourceId],
   );
-  const [resource, setResource] = useState(fallbackResource);
+  const [remoteResource, setRemoteResource] = useState(null);
   const [resources, setResources] = useState(fallbackResources);
-
-  useEffect(() => {
-    setResource(fallbackResource);
-  }, [fallbackResource]);
+  const resource = remoteResource || fallbackResource;
 
   useEffect(() => {
     let isCancelled = false;
@@ -132,14 +129,14 @@ const FreeResourceDetailPage = () => {
         }
 
         if (!isCancelled) {
-          setResource(detailResource);
+          setRemoteResource(detailResource);
           if (listResponse.ok && listResources.length) {
             setResources(listResources);
           }
         }
       } catch {
         if (!isCancelled) {
-          setResource(fallbackResource);
+          setRemoteResource(null);
           setResources(fallbackResources);
         }
       }

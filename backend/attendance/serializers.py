@@ -7,6 +7,7 @@ class AttendanceSessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AttendanceSession
         fields = ('id', 'course', 'course_title', 'title', 'date', 'start_time', 'end_time', 'description')
+        read_only_fields = ('id',)
 
 class StudentAttendanceSerializer(serializers.ModelSerializer):
     student_name = serializers.CharField(source='student.get_full_name', read_only=True)
@@ -15,4 +16,4 @@ class StudentAttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentAttendance
         fields = ('id', 'session', 'session_title', 'student', 'student_name', 'status', 'marked_at')
-        read_only_fields = ('marked_at',)
+        read_only_fields = ('id', 'student', 'student_name', 'marked_at')

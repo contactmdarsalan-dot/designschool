@@ -6,12 +6,20 @@ from .models import BlogPost
 from .api_serializers import PublicBlogListSerializer, PublicBlogDetailSerializer
 
 
+def parse_positive_int(raw_value, default, upper_bound):
+    try:
+        parsed = int(raw_value)
+    except (TypeError, ValueError):
+        return default
+    return max(1, min(upper_bound, parsed))
+
+
 class PublicBlogListView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        page = max(1, int(request.query_params.get('page', 1)))
-        limit = max(1, min(50, int(request.query_params.get('limit', 12))))
+        page = parse_positive_int(request.query_params.get('page', 1), default=1, upper_bound=100000)
+        limit = parse_positive_int(request.query_params.get('limit', 12), default=12, upper_bound=50)
         query = request.query_params.get('q', '').strip()
         category = request.query_params.get('category', '').strip()
 

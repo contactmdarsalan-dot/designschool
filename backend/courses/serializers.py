@@ -4,7 +4,8 @@ from .models import Category, Course, WhatYouWillLearn, Requirement, WhoIsFor, C
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = '__all__'
+        fields = ('id', 'name', 'slug')
+        read_only_fields = ('id', 'slug')
 
 class WhatYouWillLearnSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,7 +27,8 @@ class CourseReviewSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = CourseReview
-        fields = ('id', 'student', 'student_name', 'rating', 'comment', 'created_at')
+        fields = ('id', 'course', 'student', 'student_name', 'rating', 'comment', 'created_at')
+        read_only_fields = ('id', 'student', 'student_name', 'created_at')
 
 class CourseSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)

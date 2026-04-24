@@ -290,7 +290,8 @@ const MentorCarousel = () => {
 const CourseDetail = () => {
   const params = useParams();
   const requestedCourseId = params.id || DEFAULT_COURSE_ID;
-  const [course, setCourse] = useState(coursePayload?.data?.course || null);
+  const fallbackCourse = requestedCourseId === DEFAULT_COURSE_ID ? coursePayload?.data?.course || null : null;
+  const [course, setCourse] = useState(fallbackCourse);
   const [isLoadingCourse, setIsLoadingCourse] = useState(requestedCourseId !== DEFAULT_COURSE_ID);
 
   const [openModule, setOpenModule] = useState(0);
@@ -321,9 +322,8 @@ const CourseDetail = () => {
           setOpenFaq(0);
         }
       } catch {
-        // Keep existing fallback course data to avoid a broken page state.
         if (!isCancelled) {
-          setCourse((prev) => prev || coursePayload?.data?.course || null);
+          setCourse(fallbackCourse);
         }
       } finally {
         if (!isCancelled) {
@@ -337,7 +337,7 @@ const CourseDetail = () => {
     return () => {
       isCancelled = true;
     };
-  }, [requestedCourseId]);
+  }, [fallbackCourse, requestedCourseId]);
 
   useEffect(() => {
     const onScroll = () => {

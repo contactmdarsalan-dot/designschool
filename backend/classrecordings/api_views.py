@@ -12,9 +12,8 @@ class ClassRecordingViewSet(viewsets.ReadOnlyModelViewSet):
         if not course_id:
             return ClassRecording.objects.none()
         
-        # Verify enrollment
         is_enrolled = Enrollment.objects.filter(
-            email=self.request.user.email,
+            email__iexact=self.request.user.email,
             course_id=course_id,
             status='verified'
         ).exists()
@@ -22,4 +21,4 @@ class ClassRecordingViewSet(viewsets.ReadOnlyModelViewSet):
         if not is_enrolled and not self.request.user.is_staff:
             return ClassRecording.objects.none()
 
-        return ClassRecording.objects.filter(course_id=course_id).order_by('-uploaded_at')
+        return ClassRecording.objects.select_related('course').filter(course_id=course_id).order_by('-uploaded_at')

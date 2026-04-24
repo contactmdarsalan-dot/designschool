@@ -10,8 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
+
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -21,16 +23,39 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 
+def get_required_env(name):
+    value = os.environ.get(name)
+    if value:
+        return value
+    raise ImproperlyConfigured(f"{name} must be set when DJANGO_ENV=production")
+
+
+def get_bool_env(name, default=False):
+    return os.environ.get(name, str(default)).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def get_list_env(name, default=''):
+    raw_value = os.environ.get(name, default)
+    return [item.strip() for item in raw_value.split(',') if item.strip()]
+
+
+ENVIRONMENT = os.environ.get('DJANGO_ENV', os.environ.get('ENVIRONMENT', 'development')).lower()
+IS_PRODUCTION = ENVIRONMENT == 'production'
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-key')
+SECRET_KEY = get_required_env('SECRET_KEY') if IS_PRODUCTION else os.environ.get('SECRET_KEY', 'django-insecure-default-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = get_bool_env('DEBUG', default=not IS_PRODUCTION)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = get_list_env(
+    'ALLOWED_HOSTS',
+    default='127.0.0.1,localhost' if not IS_PRODUCTION else '',
+)
 
 
 # Application definition
@@ -45,6 +70,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     #my apps
     'core',
@@ -74,9 +100,11 @@ REST_FRAMEWORK = {
     ),
 }
 
-CORS_ALLOW_ALL_ORIGINS = True # Change in production
+CORS_ALLOW_ALL_ORIGINS = get_bool_env('CORS_ALLOW_ALL_ORIGINS', default=not IS_PRODUCTION)
+CORS_ALLOWED_ORIGINS = get_list_env('CORS_ALLOWED_ORIGINS')
+CSRF_TRUSTED_ORIGINS = get_list_env('CSRF_TRUSTED_ORIGINS')
 
-SITE_URL = "http://127.0.0.1:8000"
+SITE_URL = os.environ.get('SITE_URL', 'http://127.0.0.1:8000')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -147,16 +175,46 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
+if IS_PRODUCTION:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = get_bool_env('SECURE_SSL_REDIRECT', default=True)
+    SESSION_COOKIE_SECURE = get_bool_env('SESSION_COOKIE_SECURE', default=True)
+    CSRF_COOKIE_SECURE = get_bool_env('CSRF_COOKIE_SECURE', default=True)
+    SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '31536000'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = get_bool_env('SECURE_HSTS_INCLUDE_SUBDOMAINS', default=True)
+    SECURE_HSTS_PRELOAD = get_bool_env('SECURE_HSTS_PRELOAD', default=True)
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_REFERRER_POLICY = 'same-origin'
+else:
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_HSTS_SECONDS = 0
+
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / "db.sqlite3",
-        'ATOMIC_REQUESTS': True,
+if IS_PRODUCTION:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': get_required_env('POSTGRES_DB'),
+            'USER': get_required_env('POSTGRES_USER'),
+            'PASSWORD': get_required_env('POSTGRES_PASSWORD'),
+            'HOST': os.environ.get('POSTGRES_HOST', '127.0.0.1'),
+            'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+            'ATOMIC_REQUESTS': True,
+            'CONN_MAX_AGE': int(os.environ.get('POSTGRES_CONN_MAX_AGE', '60')),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / os.environ.get('SQLITE_NAME', 'db.sqlite3'),
+            'ATOMIC_REQUESTS': True,
+        }
+    }
 
 
 # Password validation
@@ -192,7 +250,6 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
-import os
 
 STATIC_URL = '/static/'
 # This is required for collectstatic
@@ -219,9 +276,6 @@ CKEDITOR_IMAGE_BACKEND = "pillow"
 
 # DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.User'
-# LMS User Defaults
-DEFAULT_STUDENT_PASSWORD = "student@123"
-DEFAULT_INSTRUCTOR_PASSWORD = "mentor@123"
 
 
 JAZZMIN_SETTINGS = {

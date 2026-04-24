@@ -1,19 +1,23 @@
-from rest_framework import viewsets, permissions
+from rest_framework import permissions, viewsets
+from rest_framework.exceptions import PermissionDenied
 from .models import MentorProfile
 from .serializers import MentorProfileSerializer
 
 class MentorProfileViewSet(viewsets.ModelViewSet):
     queryset = MentorProfile.objects.all()
     serializer_class = MentorProfileSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        if self.request.user.is_staff:
-            return MentorProfile.objects.all()
-        # Non-staff can only update their own profile but can view all mentors
         return MentorProfile.objects.all()
 
     def get_permissions(self):
-        if self.action in ['update', 'partial_update']:
-            return [permissions.IsAuthenticated()]
-        return [permissions.IsAuthenticatedOrReadOnly()]
+        if self.action in ('list', 'retrieve'):
+            return [permissions.AllowAny()]
+        if self.action in ('create', 'destroy'):
+            return [permissions.IsAdminUser()]
+        return [permissions.IsAuthenticated()]
+
+    def perform_update(self, serializer):
+        if not self.request.user.is_staff and serializer.instance.user_id != self.request.user.id:
+            raise PermissionDenied('You can only update your own mentor profile.')
+        serializer.save()

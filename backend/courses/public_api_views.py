@@ -6,12 +6,20 @@ from .models import Course
 from .public_serializers import PublicCourseListSerializer, PublicCourseDetailSerializer
 
 
+def parse_positive_int(raw_value, default, upper_bound):
+    try:
+        parsed = int(raw_value)
+    except (TypeError, ValueError):
+        return default
+    return max(1, min(upper_bound, parsed))
+
+
 class PublicCourseListView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        page = max(1, int(request.query_params.get('page', 1)))
-        limit = max(1, min(100, int(request.query_params.get('limit', 24))))
+        page = parse_positive_int(request.query_params.get('page', 1), default=1, upper_bound=100000)
+        limit = parse_positive_int(request.query_params.get('limit', 24), default=24, upper_bound=100)
         query = request.query_params.get('q', '').strip()
 
         queryset = (

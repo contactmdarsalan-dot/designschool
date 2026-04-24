@@ -1,5 +1,4 @@
-from rest_framework import viewsets, permissions, status
-from rest_framework.response import Response
+from rest_framework import permissions, viewsets
 from .models import Enrollment
 from .serializers import EnrollmentSerializer
 
@@ -10,10 +9,12 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'create':
             return [permissions.AllowAny()]
+        if self.action in ('list', 'retrieve'):
+            return [permissions.IsAuthenticated()]
         return [permissions.IsAdminUser()]
 
     def get_queryset(self):
+        queryset = Enrollment.objects.select_related('course').order_by('-created_at')
         if self.request.user.is_staff:
-            return Enrollment.objects.all()
-        # For students, only show their own enrollments based on email
-        return Enrollment.objects.filter(email=self.request.user.email)
+            return queryset
+        return queryset.filter(email__iexact=self.request.user.email)

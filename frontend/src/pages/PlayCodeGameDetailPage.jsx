@@ -11,7 +11,6 @@ import {
   RotateCcw,
   Timer,
   Trophy,
-  XCircle,
 } from 'lucide-react';
 import Navbar from '../components/sheryians/Navbar';
 import Footer from '../components/sheryians/Footer';
@@ -957,4 +956,3 @@ const PlayCodeGameDetailPage = () => {
 };
 
 export default PlayCodeGameDetailPage;
-
