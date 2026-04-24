@@ -1,5 +1,8 @@
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Clock, MessageSquare, ShieldCheck } from 'lucide-react';
+import { apiFetch } from '../../lib/api';
+import { formatCurrency, normalizeCourseCard } from '../../lib/courseContent';
 
 const courseThemes = {
   light: {
@@ -38,115 +41,24 @@ const courseThemes = {
   },
 };
 
-const courses = [
-  {
-    id: 'web-dev',
-    theme: 'light',
-    layout: 'media-left',
-    eyebrow: 'Flagship Cohort',
-    title: '3.0 Job Ready AI Powered Cohort: Complete Web Development + DSA + Gen AI + Aptitude',
-    description:
-      'Build real scalable products used by thousands of users, sharpen problem solving, and learn the stack companies actually hire for.',
-    durationValue: '7',
-    durationLabel: 'Months',
-    certificationValue: 'Yes',
-    certificationLabel: 'Certified',
-    supportValue: '24/7',
-    supportLabel: 'Mentor Support',
-    price: 'Rs.8,999',
-    originalPrice: 'Rs.17,998',
-    image:
-      'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?q=80&w=2069&auto=format&fit=crop',
-    imageAlt: 'Learner focused web development cohort',
-    tags: ['AI Powered', 'Job Ready'],
-    href: '/courses/69aaf85ed2c69a507ba793ad',
-  },
-  {
-    id: 'accelerator',
-    theme: 'dark',
-    layout: 'media-right',
-    eyebrow: 'Cohort 2.0',
-    title: '2.0 Job Ready AI Powered Cohort: Complete Web Development + DSA + Gen AI + Aptitude',
-    description:
-      'Practice with real products, project reviews, and guided interview prep built for faster placement outcomes.',
-    durationValue: '200+',
-    durationLabel: 'Hours',
-    certificationValue: 'Yes',
-    certificationLabel: 'Certified',
-    supportValue: '24/7',
-    supportLabel: 'Mentor Support',
-    price: 'Rs.5,999',
-    originalPrice: 'Rs.11,998',
-    image:
-      'https://images.unsplash.com/photo-1593642634443-44adaa06623a?q=80&w=2070&auto=format&fit=crop',
-    imageAlt: 'Laptop based cohort learning card',
-    tags: ['Job Ready', 'Fast Track'],
-    href: '#',
-  },
-  {
-    id: 'system-design',
-    theme: 'light',
-    layout: 'media-left',
-    eyebrow: 'Advanced Track',
-    title: 'System Design & Backend Engineering Pro',
-    description:
-      'Master APIs, distributed systems, databases, caching, and the backend architecture patterns used in production interview loops.',
-    durationValue: '4',
-    durationLabel: 'Months',
-    certificationValue: 'Yes',
-    certificationLabel: 'Certified',
-    supportValue: 'Live',
-    supportLabel: 'Review Sessions',
-    price: 'Rs.7,499',
-    originalPrice: 'Rs.15,499',
-    image:
-      'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=2070&auto=format&fit=crop',
-    imageAlt: 'System design and backend engineering program',
-    tags: ['System Design', 'Backend'],
-    href: '#',
-  },
-  {
-    id: 'data-analytics',
-    theme: 'dark',
-    layout: 'media-right',
-    eyebrow: 'Data & AI',
-    title: 'Data Science & Analytics with Gen AI',
-    description:
-      'Build a practical analytics workflow across SQL, Python, dashboards, and LLM-assisted analysis using real case studies.',
-    durationValue: '5+',
-    durationLabel: 'Months',
-    certificationValue: 'Yes',
-    certificationLabel: 'Certified',
-    supportValue: '24/7',
-    supportLabel: 'Mentor Support',
-    price: 'Rs.6,999',
-    originalPrice: 'Rs.14,891',
-    image:
-      'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop',
-    imageAlt: 'Data analytics and AI cohort visual',
-    tags: ['Data Science', 'Gen AI'],
-    href: '#',
-  },
-];
-
 const courseMetrics = (course) => [
   {
     id: `${course.id}-duration`,
     icon: Clock,
-    value: course.durationValue,
-    label: course.durationLabel,
+    value: course.featuredCard.durationValue,
+    label: course.featuredCard.durationLabel,
   },
   {
     id: `${course.id}-certification`,
     icon: ShieldCheck,
-    value: course.certificationValue,
-    label: course.certificationLabel,
+    value: course.featuredCard.certificationValue,
+    label: course.featuredCard.certificationLabel,
   },
   {
     id: `${course.id}-support`,
     icon: MessageSquare,
-    value: course.supportValue,
-    label: course.supportLabel,
+    value: course.featuredCard.supportValue,
+    label: course.featuredCard.supportLabel,
   },
 ];
 
@@ -180,10 +92,10 @@ const CourseMetric = ({ icon: Icon, value, label, theme }) => {
 };
 
 const StackedCourseCard = ({ course, index, total }) => {
-  const theme = courseThemes[course.theme];
+  const theme = courseThemes[course.featuredCard.theme] || courseThemes.light;
   const isLeadCourse = index === 0;
   const isLastCourse = index === total - 1;
-  const isMediaLeft = course.layout === 'media-left';
+  const isMediaLeft = course.featuredCard.layout === 'media-left';
   const stickyTop = 90 + index * 20;
 
   return (
@@ -214,15 +126,15 @@ const StackedCourseCard = ({ course, index, total }) => {
           <div className={`${isMediaLeft ? 'lg:order-1' : 'lg:order-2'} relative`}>
             <div className="relative overflow-hidden rounded-[28px] bg-black/10">
               <img
-                src={course.image}
-                alt={course.imageAlt}
+                src={course.thumbnail}
+                alt={course.title}
                 className="aspect-[16/10] h-full w-full object-cover transition-transform duration-700 hover:scale-[1.03]"
                 loading={index === 0 ? 'eager' : 'lazy'}
                 decoding="async"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
               <div className="absolute left-5 top-5 flex flex-wrap gap-2">
-                {course.tags.map((tag, tagIndex) => (
+                {course.tags.slice(0, 3).map((tag, tagIndex) => (
                   <span
                     key={`${course.id}-${tag}`}
                     className={`rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] ${tagIndex === 0 ? theme.chipPrimary : theme.chipSecondary
@@ -237,7 +149,7 @@ const StackedCourseCard = ({ course, index, total }) => {
 
           <div className={`${isMediaLeft ? 'lg:order-2' : 'lg:order-1'}`}>
             <p className={`text-[11px] font-black uppercase tracking-[0.26em] ${theme.eyebrow}`}>
-              {course.eyebrow}
+              {course.featuredCard.eyebrow}
             </p>
 
             <h3 className="mt-4 max-w-3xl text-[24px] font-black leading-[1.1] tracking-tight">
@@ -262,10 +174,10 @@ const StackedCourseCard = ({ course, index, total }) => {
                 <span
                   className={`text-4xl font-black leading-none tracking-tight md:text-5xl ${theme.priceValue}`}
                 >
-                  {course.price}
+                  {formatCurrency(course.salePrice)}
                 </span>
                 <span className={`pb-1 text-base line-through md:text-lg ${theme.strike}`}>
-                  {course.originalPrice}
+                  {formatCurrency(course.price)}
                 </span>
                 <span className={`pb-1 text-base md:text-lg ${theme.strike}`}>(+ GST)</span>
               </div>
@@ -289,6 +201,49 @@ const StackedCourseCard = ({ course, index, total }) => {
 };
 
 const FeaturedCourse = () => {
+  const [courses, setCourses] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadCourses = async () => {
+      setIsLoading(true);
+
+      try {
+        const { response, payload } = await apiFetch('public/courses/?page=1&limit=8');
+        const normalizedCourses = (payload?.data?.courses || []).map(normalizeCourseCard);
+
+        if (!response.ok) {
+          throw new Error(payload?.message || 'Unable to load courses');
+        }
+
+        const featuredCourses = normalizedCourses.filter((course) => course.isFeatured);
+        const selectedCourses = (featuredCourses.length > 0 ? featuredCourses : normalizedCourses).slice(0, 4);
+
+        if (!isCancelled) {
+          setCourses(selectedCourses);
+        }
+      } catch {
+        if (!isCancelled) {
+          setCourses([]);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadCourses();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  const displayedCourses = useMemo(() => courses, [courses]);
+
   return (
     <section
       id="courses"
@@ -346,17 +301,28 @@ const FeaturedCourse = () => {
         </div>
 
         <div id="courses-list" className="relative pb-4">
-          {courses.map((course, index) => (
-            <StackedCourseCard
-              key={course.id}
-              course={course}
-              index={index}
-              total={courses.length}
-            />
-          ))}
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, index) => (
+              <div
+                key={`featured-loading-${index}`}
+                className="mb-10 h-[620px] animate-pulse rounded-[34px] bg-black/6 md:rounded-[48px]"
+              />
+            ))
+          ) : displayedCourses.length > 0 ? (
+            displayedCourses.map((course, index) => (
+              <StackedCourseCard
+                key={course.id}
+                course={course}
+                index={index}
+                total={displayedCourses.length}
+              />
+            ))
+          ) : (
+            <div className="rounded-[34px] border border-black/10 bg-black/5 px-8 py-16 text-center text-black/60">
+              Featured courses will appear here once they are published from the backend.
+            </div>
+          )}
         </div>
-
-
       </div>
     </section>
   );

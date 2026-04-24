@@ -23,6 +23,14 @@ class CourseViewSet(viewsets.ModelViewSet):
             'learning_points',
             'requirements',
             'target_audience',
+            'tags',
+            'faqs',
+            'modules__points',
+            'comparison_points',
+            'technology_categories__items',
+            'builder_items',
+            'certificate_points',
+            'mentor_spotlights',
             'reviews',
         )
         if self.request.user.is_staff:

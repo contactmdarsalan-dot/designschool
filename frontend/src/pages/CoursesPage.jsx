@@ -5,49 +5,11 @@ import ComparisonSection from '../components/sheryians/ComparisonSection';
 import FaqSection from '../components/sheryians/FaqSection';
 import TransformJourney from '../components/sheryians/TransformJourney';
 import Footer from '../components/sheryians/Footer';
-import coursesPayload from '../data/sheryiansCoursesList.json';
-import { apiUrl } from '../lib/api';
-
-const COURSES_API = apiUrl('public/courses/?page=1&limit=24');
-
-const formatCurrency = (value) => {
-  const amount = Number(value || 0);
-  if (!Number.isFinite(amount)) {
-    return 'Rs.0';
-  }
-
-  if (Math.abs(amount % 1) > 0) {
-    return `Rs.${amount.toFixed(2).replace(/\.?0+$/, '')}`;
-  }
-
-  return `Rs.${Math.round(amount)}`;
-};
-
-const calculateSalePrice = (mrp, discountPercentage) => {
-  const base = Number(mrp || 0);
-  const discount = Number(discountPercentage || 0);
-  return Math.max(0, Math.round(base - (base * discount) / 100));
-};
-
-const sanitizeCourses = (list) => {
-  return (list || [])
-    .filter((item) => item?.state === 'published')
-    .map((item) => ({
-      id: item._id,
-      title: item.title,
-      thumbnail: item?.metaData?.thumbnail,
-      tags: item?.metaData?.displayTags || [],
-      language: item?.metaData?.language || 'Hindi',
-      type: item?.type || 'self-paced',
-      mrp: Number(item?.price || 0),
-      discount: Number(item?.discountPercentage || 0),
-    }));
-};
-
-const fallbackCourses = sanitizeCourses(coursesPayload?.data?.courses || []);
+import { apiFetch } from '../lib/api';
+import { formatCurrency, normalizeCourseCard } from '../lib/courseContent';
 
 const CoursesPage = () => {
-  const [courses, setCourses] = useState(fallbackCourses);
+  const [courses, setCourses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -57,11 +19,10 @@ const CoursesPage = () => {
       setIsLoading(true);
 
       try {
-        const response = await fetch(COURSES_API);
-        const payload = await response.json();
-        const fetchedCourses = sanitizeCourses(payload?.data?.courses || []);
+        const { response, payload } = await apiFetch('public/courses/?page=1&limit=24');
+        const fetchedCourses = (payload?.data?.courses || []).map(normalizeCourseCard);
 
-        if (!response.ok || fetchedCourses.length === 0) {
+        if (!response.ok) {
           throw new Error(payload?.message || 'Could not load courses');
         }
 
@@ -70,7 +31,7 @@ const CoursesPage = () => {
         }
       } catch {
         if (!isCancelled) {
-          setCourses(fallbackCourses);
+          setCourses([]);
         }
       } finally {
         if (!isCancelled) {
@@ -86,12 +47,7 @@ const CoursesPage = () => {
     };
   }, []);
 
-  const cards = useMemo(() => {
-    return courses.map((course) => ({
-      ...course,
-      salePrice: calculateSalePrice(course.mrp, course.discount),
-    }));
-  }, [courses]);
+  const cards = useMemo(() => courses, [courses]);
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-emerald-500/30 selection:text-emerald-100">
@@ -114,7 +70,7 @@ const CoursesPage = () => {
               </h1>
             </div>
 
-            {isLoading && cards.length === 0 ? (
+            {isLoading ? (
               <div className="mt-14 grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, index) => (
                   <div
@@ -122,6 +78,10 @@ const CoursesPage = () => {
                     className="h-[530px] animate-pulse rounded-[26px] border border-white/10 bg-white/[0.03]"
                   />
                 ))}
+              </div>
+            ) : cards.length === 0 ? (
+              <div className="mt-14 rounded-[26px] border border-white/10 bg-white/[0.03] px-8 py-16 text-center text-white/70">
+                No published courses are available right now.
               </div>
             ) : (
               <div className="mt-14 grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
@@ -166,6 +126,10 @@ const CoursesPage = () => {
                       {course.title}
                     </h2>
 
+                    <p className="mt-3 min-h-[3.75rem] text-base leading-relaxed text-white/60">
+                      {course.description}
+                    </p>
+
                     <div className="mt-7 flex items-end justify-between gap-4">
                       <div className="leading-none">
                         <p className="text-[2.85rem] font-light text-white md:text-[2.4rem]">
@@ -174,17 +138,19 @@ const CoursesPage = () => {
                             {formatCurrency(course.salePrice)}
                           </span>{' '}
                           <span className="text-[1.55rem] text-white/45 line-through md:text-lg">
-                            {formatCurrency(course.mrp)}
+                            {formatCurrency(course.price)}
                           </span>
                         </p>
                       </div>
-                      <span className="rounded-md bg-white px-2.5 py-1 text-sm text-black">
-                        {course.discount}% OFF
-                      </span>
+                      {course.discount > 0 ? (
+                        <span className="rounded-md bg-white px-2.5 py-1 text-sm text-black">
+                          {course.discount}% OFF
+                        </span>
+                      ) : null}
                     </div>
 
                     <a
-                      href={`/courses/${course.id}`}
+                      href={course.href}
                       className="mt-7 inline-flex items-center gap-2 rounded-2xl border border-white/35 px-6 py-3 text-[1.7rem] font-medium text-white transition hover:bg-white hover:text-black md:text-lg"
                     >
                       Check Course

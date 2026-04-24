@@ -21,11 +21,13 @@ class PublicCourseListView(APIView):
         page = parse_positive_int(request.query_params.get('page', 1), default=1, upper_bound=100000)
         limit = parse_positive_int(request.query_params.get('limit', 24), default=24, upper_bound=100)
         query = request.query_params.get('q', '').strip()
+        featured_only = request.query_params.get('featured')
 
         queryset = (
             Course.objects.filter(is_published=True)
+            .select_related('category')
             .prefetch_related('tags')
-            .order_by('-created_at')
+            .order_by('-is_featured', 'featured_order', '-created_at')
         )
 
         if query:
@@ -34,6 +36,9 @@ class PublicCourseListView(APIView):
                 | Q(short_description__icontains=query)
                 | Q(description__icontains=query)
             )
+
+        if featured_only in {'1', 'true', 'True', 'yes'}:
+            queryset = queryset.filter(is_featured=True)
 
         total = queryset.count()
         offset = (page - 1) * limit
@@ -70,7 +75,20 @@ class PublicCourseDetailView(APIView):
 
         course = (
             Course.objects.filter(is_published=True)
-            .prefetch_related('tags', 'requirements', 'faqs', 'modules__points')
+            .select_related('category', 'mentor')
+            .prefetch_related(
+                'tags',
+                'learning_points',
+                'requirements',
+                'target_audience',
+                'faqs',
+                'modules__points',
+                'comparison_points',
+                'technology_categories__items',
+                'builder_items',
+                'certificate_points',
+                'mentor_spotlights',
+            )
             .filter(query)
             .first()
         )

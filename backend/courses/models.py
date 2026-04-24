@@ -31,6 +31,16 @@ class Course(models.Model):
         ('en_np', 'English & Nepali'),
     ]
 
+    FEATURED_THEME_CHOICES = [
+        ('light', 'Light'),
+        ('dark', 'Dark'),
+    ]
+
+    FEATURED_LAYOUT_CHOICES = [
+        ('media-left', 'Media Left'),
+        ('media-right', 'Media Right'),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     mentor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -51,6 +61,9 @@ class Course(models.Model):
     )
     display_video = models.URLField(blank=True, help_text='Public intro video URL')
     duration_weeks = models.PositiveIntegerField(default=12)
+    syllabus_url = models.URLField(blank=True)
+    certificate_available = models.BooleanField(default=True)
+    detail_badge_text = models.CharField(max_length=80, blank=True, default='Job Ready!')
 
     # Pricing
     actual_price = models.DecimalField(max_digits=8, decimal_places=2)
@@ -69,6 +82,13 @@ class Course(models.Model):
     total_seats = models.PositiveIntegerField(default=20)
     enrolled_students = models.PositiveIntegerField(default=0)
     is_live = models.BooleanField(default=True)
+    is_featured = models.BooleanField(default=False)
+    featured_order = models.PositiveIntegerField(default=0)
+    featured_theme = models.CharField(max_length=10, choices=FEATURED_THEME_CHOICES, default='light')
+    featured_layout = models.CharField(max_length=20, choices=FEATURED_LAYOUT_CHOICES, default='media-left')
+    featured_eyebrow = models.CharField(max_length=120, blank=True)
+    support_value = models.CharField(max_length=80, blank=True, default='24/7')
+    support_label = models.CharField(max_length=80, blank=True, default='Mentor Support')
 
     # Status
     is_published = models.BooleanField(default=False)
@@ -171,6 +191,89 @@ class CourseModulePoint(models.Model):
 
     def __str__(self):
         return self.text
+
+
+class CourseComparisonPoint(models.Model):
+    SIDE_CHOICES = [
+        ('school', 'School'),
+        ('others', 'Others'),
+    ]
+
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='comparison_points')
+    side = models.CharField(max_length=10, choices=SIDE_CHOICES)
+    text = models.CharField(max_length=255)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ('side', 'sort_order', 'id')
+
+    def __str__(self):
+        return f'{self.course.title} - {self.side} - {self.text}'
+
+
+class CourseTechnologyCategory(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='technology_categories')
+    name = models.CharField(max_length=120)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ('sort_order', 'id')
+        verbose_name_plural = 'Course technology categories'
+
+    def __str__(self):
+        return f'{self.course.title} - {self.name}'
+
+
+class CourseTechnologyItem(models.Model):
+    category = models.ForeignKey(CourseTechnologyCategory, on_delete=models.CASCADE, related_name='items')
+    name = models.CharField(max_length=120)
+    icon_url = models.URLField(blank=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ('sort_order', 'id')
+
+    def __str__(self):
+        return self.name
+
+
+class CourseBuilderItem(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='builder_items')
+    title = models.CharField(max_length=160)
+    icon_name = models.CharField(max_length=80, blank=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ('sort_order', 'id')
+
+    def __str__(self):
+        return self.title
+
+
+class CourseCertificatePoint(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='certificate_points')
+    text = models.CharField(max_length=255)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ('sort_order', 'id')
+
+    def __str__(self):
+        return self.text
+
+
+class CourseMentorSpotlight(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='mentor_spotlights')
+    name = models.CharField(max_length=120, blank=True)
+    role = models.CharField(max_length=120, blank=True)
+    photo_url = models.URLField(blank=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ('sort_order', 'id')
+
+    def __str__(self):
+        return self.name or f'{self.course.title} mentor'
 
 
 
