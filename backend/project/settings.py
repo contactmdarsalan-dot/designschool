@@ -39,6 +39,22 @@ def get_list_env(name, default=''):
     return [item.strip() for item in raw_value.split(',') if item.strip()]
 
 
+def get_sqlite_database(default_name='db.sqlite3'):
+    sqlite_name = os.path.expandvars(os.path.expanduser(os.environ.get('SQLITE_NAME', default_name)))
+    sqlite_path = Path(sqlite_name)
+    if not sqlite_path.is_absolute():
+        sqlite_path = BASE_DIR / sqlite_path
+    sqlite_path.parent.mkdir(parents=True, exist_ok=True)
+
+    return {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': sqlite_path,
+            'ATOMIC_REQUESTS': True,
+        }
+    }
+
+
 ENVIRONMENT = os.environ.get('DJANGO_ENV', os.environ.get('ENVIRONMENT', 'development')).lower()
 IS_PRODUCTION = ENVIRONMENT == 'production'
 
@@ -47,16 +63,23 @@ IS_PRODUCTION = ENVIRONMENT == 'production'
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = get_required_env('SECRET_KEY') if IS_PRODUCTION else os.environ.get('SECRET_KEY', 'django-insecure-default-key')
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    SECRET_KEY = (
+        'django-insecure-render-fallback-key-change-me'
+        if IS_PRODUCTION
+        else 'django-insecure-default-key'
+    )
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = get_bool_env('DEBUG', default=not IS_PRODUCTION)
 
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '')
+PRODUCTION_ALLOWED_HOSTS = RENDER_EXTERNAL_HOSTNAME or '.onrender.com'
 
 ALLOWED_HOSTS = get_list_env(
     'ALLOWED_HOSTS',
-    default='127.0.0.1,localhost' if not IS_PRODUCTION else RENDER_EXTERNAL_HOSTNAME,
+    default='127.0.0.1,localhost' if not IS_PRODUCTION else PRODUCTION_ALLOWED_HOSTS,
 )
 
 
@@ -106,7 +129,7 @@ CORS_ALLOW_ALL_ORIGINS = get_bool_env('CORS_ALLOW_ALL_ORIGINS', default=not IS_P
 CORS_ALLOWED_ORIGINS = get_list_env('CORS_ALLOWED_ORIGINS')
 CSRF_TRUSTED_ORIGINS = get_list_env(
     'CSRF_TRUSTED_ORIGINS',
-    default=f'https://{RENDER_EXTERNAL_HOSTNAME}' if RENDER_EXTERNAL_HOSTNAME else '',
+    default=f'https://{RENDER_EXTERNAL_HOSTNAME}' if RENDER_EXTERNAL_HOSTNAME else 'https://*.onrender.com',
 )
 
 SITE_URL = os.environ.get('SITE_URL', 'http://127.0.0.1:8000')
@@ -202,6 +225,10 @@ else:
 if IS_PRODUCTION:
     database_url = os.environ.get('DATABASE_URL')
     conn_max_age = int(os.environ.get('POSTGRES_CONN_MAX_AGE', '60'))
+    has_postgres_settings = all(
+        os.environ.get(name)
+        for name in ('POSTGRES_DB', 'POSTGRES_USER', 'POSTGRES_PASSWORD')
+    )
 
     if database_url:
         import dj_database_url
@@ -214,7 +241,7 @@ if IS_PRODUCTION:
             )
         }
         DATABASES['default']['ATOMIC_REQUESTS'] = True
-    else:
+    elif has_postgres_settings:
         DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.postgresql',
@@ -230,20 +257,11 @@ if IS_PRODUCTION:
                 'CONN_MAX_AGE': conn_max_age,
             }
         }
+    else:
+        fallback_sqlite = '/tmp/eduflow-lms/db.sqlite3' if os.name != 'nt' else 'db.sqlite3'
+        DATABASES = get_sqlite_database(default_name=fallback_sqlite)
 else:
-    sqlite_name = os.path.expandvars(os.path.expanduser(os.environ.get('SQLITE_NAME', 'db.sqlite3')))
-    sqlite_path = Path(sqlite_name)
-    if not sqlite_path.is_absolute():
-        sqlite_path = BASE_DIR / sqlite_path
-    sqlite_path.parent.mkdir(parents=True, exist_ok=True)
-
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': sqlite_path,
-            'ATOMIC_REQUESTS': True,
-        }
-    }
+    DATABASES = get_sqlite_database()
 
 
 # Password validation
