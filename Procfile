@@ -1,1 +1,1 @@
-web: cd backend && python manage.py migrate --noinput && gunicorn project.wsgi:application --bind 0.0.0.0:${PORT:-8000}
+web: cd backend && python render_start.py
