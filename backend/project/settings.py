@@ -125,14 +125,24 @@ REST_FRAMEWORK = {
     ),
 }
 
-CORS_ALLOW_ALL_ORIGINS = get_bool_env('CORS_ALLOW_ALL_ORIGINS', default=not IS_PRODUCTION)
-CORS_ALLOWED_ORIGINS = get_list_env('CORS_ALLOWED_ORIGINS')
-CSRF_TRUSTED_ORIGINS = get_list_env(
-    'CSRF_TRUSTED_ORIGINS',
-    default=f'https://{RENDER_EXTERNAL_HOSTNAME}' if RENDER_EXTERNAL_HOSTNAME else 'https://*.onrender.com',
+SITE_URL = os.environ.get('SITE_URL', 'http://127.0.0.1:8000')
+FRONTEND_SITE_URL = os.environ.get('FRONTEND_SITE_URL', 'https://designschool-beta.vercel.app' if IS_PRODUCTION else 'http://127.0.0.1:5173')
+
+DEFAULT_FRONTEND_ORIGINS = ','.join(
+    origin
+    for origin in (FRONTEND_SITE_URL, 'https://designschool-beta.vercel.app')
+    if origin
 )
 
-SITE_URL = os.environ.get('SITE_URL', 'http://127.0.0.1:8000')
+CORS_ALLOW_ALL_ORIGINS = get_bool_env('CORS_ALLOW_ALL_ORIGINS', default=not IS_PRODUCTION)
+CORS_ALLOWED_ORIGINS = get_list_env(
+    'CORS_ALLOWED_ORIGINS',
+    default=DEFAULT_FRONTEND_ORIGINS if IS_PRODUCTION else '',
+)
+CSRF_TRUSTED_ORIGINS = get_list_env(
+    'CSRF_TRUSTED_ORIGINS',
+    default=DEFAULT_FRONTEND_ORIGINS if IS_PRODUCTION else '',
+)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

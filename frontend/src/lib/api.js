@@ -1,6 +1,10 @@
 import { getAccessToken } from './auth';
 
-const baseFromEnv = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/v1';
+const DEFAULT_API_BASE_URL = import.meta.env.DEV
+  ? 'http://127.0.0.1:8000/api/v1'
+  : 'https://designschool.onrender.com/api/v1';
+
+const baseFromEnv = import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL;
 
 export const API_BASE_URL = baseFromEnv.replace(/\/+$/, '');
 
@@ -43,7 +47,13 @@ export const apiFetch = async (path, options = {}) => {
     }
   }
 
-  const response = await fetch(apiUrl(path), requestOptions);
+  let response;
+  try {
+    response = await fetch(apiUrl(path), requestOptions);
+  } catch (error) {
+    throw new Error(`Unable to reach the API at ${API_BASE_URL}. Check the backend deployment and Vercel API URL.`);
+  }
+
   const payload = await parseResponseBody(response);
   return { response, payload };
 };

@@ -3,8 +3,9 @@ const GOOGLE_ALLOWED_ORIGINS = (import.meta.env.VITE_GOOGLE_ALLOWED_ORIGINS || '
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
-const GOOGLE_ALLOW_LOCALHOST = String(import.meta.env.VITE_GOOGLE_ALLOW_LOCALHOST || '').toLowerCase() === 'true';
 const IS_DEV = Boolean(import.meta.env.DEV);
+const GOOGLE_ALLOW_LOCALHOST =
+  String(import.meta.env.VITE_GOOGLE_ALLOW_LOCALHOST || '').toLowerCase() === 'true' || IS_DEV;
 
 const getCurrentOrigin = () => {
   if (typeof window === 'undefined') {
@@ -25,6 +26,10 @@ const getCurrentHostname = () => {
 const currentOrigin = getCurrentOrigin();
 const currentHostname = getCurrentHostname();
 const isLocalOrigin = ['localhost', '127.0.0.1', '[::1]'].includes(currentHostname);
+const configuredOriginMismatch =
+  GOOGLE_ALLOWED_ORIGINS.length > 0 &&
+  currentOrigin &&
+  !GOOGLE_ALLOWED_ORIGINS.includes(currentOrigin);
 
 const buildDisabledGoogleConfig = ({ reason, userMessage }) => ({
   clientId: GOOGLE_CLIENT_ID,
@@ -44,13 +49,6 @@ const buildGoogleAuthConfig = () => {
     });
   }
 
-  if (GOOGLE_ALLOWED_ORIGINS.length > 0 && currentOrigin && !GOOGLE_ALLOWED_ORIGINS.includes(currentOrigin)) {
-    return buildDisabledGoogleConfig({
-      reason: `Google sign-in is disabled for this origin. Current origin: ${currentOrigin}. Add it to VITE_GOOGLE_ALLOWED_ORIGINS after registering it in Google Cloud Console.`,
-      userMessage: 'Email sign-in is active here. Google sign-in will appear after OAuth is approved for this environment.',
-    });
-  }
-
   if (isLocalOrigin && !GOOGLE_ALLOW_LOCALHOST && GOOGLE_ALLOWED_ORIGINS.length === 0) {
     return buildDisabledGoogleConfig({
       reason: `Google sign-in is disabled on ${currentOrigin} until this local origin is explicitly approved. Register ${currentOrigin} in Google Cloud Console, then add it to VITE_GOOGLE_ALLOWED_ORIGINS or set VITE_GOOGLE_ALLOW_LOCALHOST=true.`,
@@ -61,7 +59,9 @@ const buildGoogleAuthConfig = () => {
   return {
     clientId: GOOGLE_CLIENT_ID,
     enabled: true,
-    reason: '',
+    reason: configuredOriginMismatch
+      ? `Current origin ${currentOrigin} is not listed in VITE_GOOGLE_ALLOWED_ORIGINS. Google Cloud must still authorize this origin.`
+      : '',
     userMessage: '',
     currentOrigin,
     isLocalOrigin,
