@@ -14,6 +14,8 @@ temp/
 *.pdf
 *.html
 *.txt
+!requirements.txt
+!runtime.txt
 .pdf-extract-*/
 CYBERFICTION-IMAGES/
 temp_cyberfiction/
