@@ -52,9 +52,11 @@ SECRET_KEY = get_required_env('SECRET_KEY') if IS_PRODUCTION else os.environ.get
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = get_bool_env('DEBUG', default=not IS_PRODUCTION)
 
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '')
+
 ALLOWED_HOSTS = get_list_env(
     'ALLOWED_HOSTS',
-    default='127.0.0.1,localhost' if not IS_PRODUCTION else '',
+    default='127.0.0.1,localhost' if not IS_PRODUCTION else RENDER_EXTERNAL_HOSTNAME,
 )
 
 
@@ -102,7 +104,10 @@ REST_FRAMEWORK = {
 
 CORS_ALLOW_ALL_ORIGINS = get_bool_env('CORS_ALLOW_ALL_ORIGINS', default=not IS_PRODUCTION)
 CORS_ALLOWED_ORIGINS = get_list_env('CORS_ALLOWED_ORIGINS')
-CSRF_TRUSTED_ORIGINS = get_list_env('CSRF_TRUSTED_ORIGINS')
+CSRF_TRUSTED_ORIGINS = get_list_env(
+    'CSRF_TRUSTED_ORIGINS',
+    default=f'https://{RENDER_EXTERNAL_HOSTNAME}' if RENDER_EXTERNAL_HOSTNAME else '',
+)
 
 SITE_URL = os.environ.get('SITE_URL', 'http://127.0.0.1:8000')
 
@@ -195,18 +200,36 @@ else:
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 if IS_PRODUCTION:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': get_required_env('POSTGRES_DB'),
-            'USER': get_required_env('POSTGRES_USER'),
-            'PASSWORD': get_required_env('POSTGRES_PASSWORD'),
-            'HOST': os.environ.get('POSTGRES_HOST', '127.0.0.1'),
-            'PORT': os.environ.get('POSTGRES_PORT', '5432'),
-            'ATOMIC_REQUESTS': True,
-            'CONN_MAX_AGE': int(os.environ.get('POSTGRES_CONN_MAX_AGE', '60')),
+    database_url = os.environ.get('DATABASE_URL')
+    conn_max_age = int(os.environ.get('POSTGRES_CONN_MAX_AGE', '60'))
+
+    if database_url:
+        import dj_database_url
+
+        DATABASES = {
+            'default': dj_database_url.parse(
+                database_url,
+                conn_max_age=conn_max_age,
+                ssl_require=get_bool_env('POSTGRES_SSL_REQUIRE', default=True),
+            )
         }
-    }
+        DATABASES['default']['ATOMIC_REQUESTS'] = True
+    else:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': get_required_env('POSTGRES_DB'),
+                'USER': get_required_env('POSTGRES_USER'),
+                'PASSWORD': get_required_env('POSTGRES_PASSWORD'),
+                'HOST': os.environ.get('POSTGRES_HOST', '127.0.0.1'),
+                'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+                'OPTIONS': {
+                    'sslmode': os.environ.get('POSTGRES_SSLMODE', 'require'),
+                },
+                'ATOMIC_REQUESTS': True,
+                'CONN_MAX_AGE': conn_max_age,
+            }
+        }
 else:
     sqlite_name = os.path.expandvars(os.path.expanduser(os.environ.get('SQLITE_NAME', 'db.sqlite3')))
     sqlite_path = Path(sqlite_name)
