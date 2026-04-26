@@ -1,38 +1,36 @@
-import { useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { ArrowUpRight, Brain, Users, Rocket, Trophy } from 'lucide-react';
+import { ArrowUpRight, BookOpen, Brain, Code2, Palette, Rocket, Trophy, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-const cards = [
-  {
-    id: 1,
-    title: "Coming To Your Campus",
-    description: "This Time The Feature Was At IIIT Bhopal, Where We Talked About How To Stay Ahead Of The Crowd.",
-    image: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070&auto=format&fit=crop",
-    badge: "Featured",
-    icon: Brain,
-  },
-  {
-    id: 2,
-    title: "Modern Classrooms",
-    description: "Experience the best learning environment with our state-of-the-art facilities.",
-    image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2071&auto=format&fit=crop",
-    icon: Users,
-  },
-  {
-    id: 3,
-    title: "Expert Mentorship",
-    description: "Learn from industry experts who have been in your shoes and succeeded.",
-    image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070&auto=format&fit=crop",
-    icon: Rocket,
-  },
-  {
-    id: 4,
-    title: "Vibrant Community",
-    description: "Join a network of thousands of students and alumni across the globe.",
-    image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=2064&auto=format&fit=crop",
-    icon: Trophy,
-  },
+import { apiFetch } from '../../lib/api';
+
+const fallbackImages = [
+  'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2071&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=2064&auto=format&fit=crop',
 ];
+
+const iconMap = {
+  BookOpen,
+  Brain,
+  Code2,
+  Palette,
+  Rocket,
+  Trophy,
+  Users,
+};
+
+const normalizeCategoryCard = (category, index) => ({
+  id: category.id || category.slug || index,
+  title: category.name || 'Course Category',
+  description: category.short_description || 'Explore focused programs designed for practical outcomes.',
+  image: category.image_url || fallbackImages[index % fallbackImages.length],
+  badge: category.badge || (index === 0 ? 'Featured' : ''),
+  icon: iconMap[category.icon_name] || iconMap.Brain,
+  href: `/courses?category=${category.slug}`,
+});
 
 const Card = ({ card, index, scrollYProgress }) => {
   const staggerY = index % 2 === 0 ? 80 : -80;
@@ -42,14 +40,14 @@ const Card = ({ card, index, scrollYProgress }) => {
   const Icon = card.icon || Brain;
 
   return (
-    <motion.div 
+    <motion.div
       style={{ y }}
       className="relative shrink-0 w-[420px] h-[520px] rounded-[32px] overflow-hidden group cursor-pointer border border-zinc-800/50 bg-zinc-900 shadow-2xl"
     >
-      <img 
-        src={card.image} 
-        alt={card.title} 
-        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+      <img
+        src={card.image}
+        alt={card.title}
+        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
       />
       
       {/* Crown Doodle for first card */}
@@ -82,9 +80,13 @@ const Card = ({ card, index, scrollYProgress }) => {
       </div>
 
       {/* Arrow Icon */}
-      <div className="absolute top-8 right-8 w-14 h-14 bg-black/40 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/10 group-hover:bg-brand group-hover:text-black transition-all duration-500 shadow-xl z-20">
+      <Link
+        to={card.href}
+        className="absolute top-8 right-8 w-14 h-14 bg-black/40 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/10 group-hover:bg-brand group-hover:text-black transition-all duration-500 shadow-xl z-20"
+        aria-label={`View ${card.title} courses`}
+      >
         <ArrowUpRight className="w-6 h-6 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-      </div>
+      </Link>
 
       {/* Content */}
       <div className="absolute bottom-10 left-10 right-10 z-20">
@@ -101,11 +103,48 @@ const Card = ({ card, index, scrollYProgress }) => {
 
 const HorizontalScroll = () => {
   const targetRef = useRef(null);
+  const [categories, setCategories] = useState([]);
   const { scrollYProgress } = useScroll({
     target: targetRef,
   });
 
-  const x = useTransform(scrollYProgress, [0.1, 1], ["0%", "-60%"]);
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCategories = async () => {
+      try {
+        const { response, payload } = await apiFetch('courses/categories/');
+        if (!response.ok) {
+          return;
+        }
+        const categoryRows = Array.isArray(payload) ? payload : payload?.data?.categories || payload?.data || [];
+        if (isMounted) {
+          setCategories(
+            categoryRows
+              .filter((category) => category.show_on_home !== false)
+              .sort((left, right) => (left.sort_order || 0) - (right.sort_order || 0)),
+          );
+        }
+      } catch {
+        if (isMounted) {
+          setCategories([]);
+        }
+      }
+    };
+
+    void loadCategories();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const cards = useMemo(() => categories.map(normalizeCategoryCard), [categories]);
+  const x = useTransform(scrollYProgress, [0.1, 1], ['0%', cards.length > 3 ? '-60%' : '-25%']);
+
+  if (!cards.length) {
+    return null;
+  }
 
   return (
     <section ref={targetRef} className="relative h-[300vh] bg-black">
@@ -130,7 +169,7 @@ const HorizontalScroll = () => {
             whileInView={{ opacity: 1, y: 0 }}
             className="text-[42px] md:text-[56px] font-extrabold text-white tracking-tight leading-[1.1]"
           >
-            How We Are Doing It Faster And Better <br /> Than Others!
+            Explore The Skills That Move You <br /> Faster And Better
           </motion.h2>
         </div>
 

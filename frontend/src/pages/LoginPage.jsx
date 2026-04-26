@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, AlertCircle, Brain, Lock, Mail } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
 import { storeAuthSession } from '../lib/auth';
 import { extractApiError } from '../lib/errors';
-import { IS_GOOGLE_AUTH_ENABLED } from '../lib/googleAuth';
+import { GOOGLE_AUTH_CONFIG, IS_GOOGLE_AUTH_ENABLED } from '../lib/googleAuth';
 
 const GoogleIcon = () => (
   <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -17,8 +17,36 @@ const GoogleIcon = () => (
   </svg>
 );
 
+const getGoogleAuthErrorMessage = (errorResponse) => {
+  const errorCode = errorResponse?.error || '';
+
+  if (errorCode === 'popup_closed_by_user' || errorCode === 'popup_closed') {
+    return 'Google sign-in popup was closed before the request finished.';
+  }
+
+  if (errorCode === 'popup_failed_to_open') {
+    return 'Browser blocked the Google popup. Allow popups for this site and try again.';
+  }
+
+  if (errorCode === 'access_denied') {
+    return 'Google sign-in request was denied. Check that this client ID and origin are registered in Google Cloud Console.';
+  }
+
+  if (errorCode === 'idpiframe_initialization_failed') {
+    return GOOGLE_AUTH_CONFIG.reason || 'Google sign-in could not initialize on this origin.';
+  }
+
+  return (
+    GOOGLE_AUTH_CONFIG.reason
+    || errorResponse?.error_description
+    || 'Google sign-in failed. Check your Google OAuth client origin and redirect configuration.'
+  );
+};
+
 const GoogleLoginButton = ({ isLoading, onError, onNewSession }) => {
   const loginWithGoogle = useGoogleLogin({
+    flow: 'implicit',
+    scope: 'openid email profile',
     onSuccess: async (tokenResponse) => {
       try {
         const { response, payload } = await apiFetch('auth/google-login/', {
@@ -35,8 +63,11 @@ const GoogleLoginButton = ({ isLoading, onError, onNewSession }) => {
         onError(err.message || 'Google login failed.');
       }
     },
-    onError: () => {
-      onError('Google login was cancelled or failed.');
+    onError: (errorResponse) => {
+      onError(getGoogleAuthErrorMessage(errorResponse));
+    },
+    onNonOAuthError: (nonOAuthError) => {
+      onError(getGoogleAuthErrorMessage({ error: nonOAuthError }));
     },
   });
 
@@ -55,12 +86,15 @@ const GoogleLoginButton = ({ isLoading, onError, onNewSession }) => {
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const nextPath = new URLSearchParams(location.search).get('next') || '';
+  const studentDestination = nextPath || '/dashboard';
 
   useEffect(() => {
     document.title = 'Sign In | Design School';
@@ -68,12 +102,12 @@ const LoginPage = () => {
 
   const handleGoogleSession = (payload) => {
     if (payload.is_new_user || !payload.user?.is_phone_verified) {
-      navigate('/verify-phone', { state: { email: payload.user?.email } });
+      navigate('/verify-phone', { state: { email: payload.user?.email, next: studentDestination } });
       return;
     }
 
     storeAuthSession(payload);
-    navigate('/dashboard');
+    navigate(payload.user?.role === 'admin' ? '/admin-panel' : studentDestination);
   };
 
   const handleChange = (event) => {
@@ -109,12 +143,12 @@ const LoginPage = () => {
       }
 
       if (!payload.user?.is_phone_verified) {
-        navigate('/verify-phone', { state: { email: payload.user?.email } });
+        navigate('/verify-phone', { state: { email: payload.user?.email, next: studentDestination } });
         return;
       }
 
       storeAuthSession(payload);
-      navigate('/dashboard');
+      navigate(payload.user?.role === 'admin' ? '/admin-panel' : studentDestination);
     } catch (err) {
       setError(err.message || 'Unable to sign you in.');
     } finally {
@@ -161,7 +195,7 @@ const LoginPage = () => {
           </div>
 
           <div className="flex items-center gap-4 text-sm text-zinc-500">
-            <span>© 2026 Design School</span>
+            <span>&copy; 2026 Design School</span>
             <span className="h-1 w-1 rounded-full bg-zinc-700" />
             <span>Secure sign in</span>
           </div>
@@ -198,8 +232,17 @@ const LoginPage = () => {
                 </div>
               </>
             ) : (
-              <div className="mb-8 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-zinc-400">
-                Google sign-in is not configured yet. Email login is available below.
+              <div className="mb-8">
+                <div className="flex items-center">
+                  <div className="flex-1 border-t border-white/10" />
+                  <span className="px-4 text-xs font-medium uppercase tracking-wider text-zinc-500">Sign in with email</span>
+                  <div className="flex-1 border-t border-white/10" />
+                </div>
+                {GOOGLE_AUTH_CONFIG.userMessage ? (
+                  <p className="mt-3 text-center text-sm leading-relaxed text-zinc-500">
+                    {GOOGLE_AUTH_CONFIG.userMessage}
+                  </p>
+                ) : null}
               </div>
             )}
 
@@ -272,7 +315,10 @@ const LoginPage = () => {
 
             <p className="mt-8 text-center text-sm text-zinc-400">
               New here?{' '}
-              <Link to="/register" className="font-medium text-white underline decoration-white/30 underline-offset-4 transition-colors hover:text-brand">
+              <Link
+                to={nextPath ? `/register?next=${encodeURIComponent(nextPath)}` : '/register'}
+                className="font-medium text-white underline decoration-white/30 underline-offset-4 transition-colors hover:text-brand"
+              >
                 Create an account
               </Link>
             </p>
@@ -284,3 +330,4 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+

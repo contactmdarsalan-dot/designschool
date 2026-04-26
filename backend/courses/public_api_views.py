@@ -75,7 +75,7 @@ class PublicCourseDetailView(APIView):
 
         course = (
             Course.objects.filter(is_published=True)
-            .select_related('category', 'mentor')
+            .select_related('category', 'mentor', 'mentor__mentor_profile')
             .prefetch_related(
                 'tags',
                 'learning_points',

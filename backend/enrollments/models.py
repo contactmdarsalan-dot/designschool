@@ -12,6 +12,18 @@ class Enrollment(models.Model):
     email = models.EmailField()
     whatsapp_number = models.CharField(max_length=20)
     course = models.ForeignKey('courses.Course', on_delete=models.CASCADE, related_name='enrollments')
+    payment_method = models.ForeignKey(
+        'PaymentMethod',
+        on_delete=models.SET_NULL,
+        related_name='enrollments',
+        blank=True,
+        null=True,
+    )
+    payment_screenshot = models.ImageField(
+        upload_to='enrollments/payment_screenshots/',
+        blank=True,
+        null=True,
+    )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -32,3 +44,18 @@ class VerifiedEnrollment(Enrollment):
         proxy = True
         verbose_name = "Verified Enrollment"
         verbose_name_plural = "Verified Enrollments"
+
+
+class PaymentMethod(models.Model):
+    name = models.CharField(max_length=120)
+    qr_code = models.ImageField(upload_to='enrollments/payment_qr_codes/')
+    account_label = models.CharField(max_length=160, blank=True)
+    is_active = models.BooleanField(default=True)
+    sort_order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('sort_order', 'name')
+
+    def __str__(self):
+        return self.name

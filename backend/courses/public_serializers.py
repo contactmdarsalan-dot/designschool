@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from mentors.models import MentorProfile
+
 from .models import Course
 
 
@@ -11,6 +13,45 @@ def build_absolute_media_url(request, media_field):
     if request is None:
         return media_url
     return request.build_absolute_uri(media_url)
+
+
+def mentor_display_name(user):
+    full_name = user.get_full_name() if hasattr(user, 'get_full_name') else ''
+    return full_name or getattr(user, 'username', '') or getattr(user, 'email', '')
+
+
+def serialize_platform_mentor(request, profile, associated_mentor_id=None):
+    user = profile.user
+    return {
+        'id': str(user.id),
+        'name': mentor_display_name(user),
+        'role': profile.expertise or profile.current_company or 'Platform Mentor',
+        'photoUrl': build_absolute_media_url(request, profile.photo),
+        'bio': profile.bio,
+        'experience': profile.experience,
+        'company': profile.current_company,
+        'associated': bool(associated_mentor_id and user.id == associated_mentor_id),
+    }
+
+
+def serialize_course_mentor(request, user):
+    mentor_profile = getattr(user, 'mentor_profile', None)
+    mentor_photo = ''
+    mentor_role = 'Course Mentor'
+    mentor_company = ''
+
+    if mentor_profile:
+        mentor_photo = build_absolute_media_url(request, mentor_profile.photo)
+        mentor_role = mentor_profile.expertise or mentor_profile.current_company or mentor_role
+        mentor_company = mentor_profile.current_company
+
+    return {
+        'id': str(user.id),
+        'name': mentor_display_name(user),
+        'photo': mentor_photo,
+        'role': mentor_role,
+        'company': mentor_company,
+    }
 
 
 DEFAULT_COMPARISON = {
@@ -228,6 +269,7 @@ class PublicCourseDetailSerializer(PublicCourseListSerializer):
     technologySections = serializers.SerializerMethodField()
     builderItems = serializers.SerializerMethodField()
     certificatePoints = serializers.SerializerMethodField()
+    platformMentors = serializers.SerializerMethodField()
     mentorSpotlights = serializers.SerializerMethodField()
     metaData = serializers.SerializerMethodField()
 
@@ -250,21 +292,12 @@ class PublicCourseDetailSerializer(PublicCourseListSerializer):
             'technologySections',
             'builderItems',
             'certificatePoints',
+            'platformMentors',
             'mentorSpotlights',
         )
 
     def get_mentor(self, obj):
-        full_name = obj.mentor.get_full_name() if hasattr(obj.mentor, 'get_full_name') else ''
-        mentor_name = full_name or getattr(obj.mentor, 'username', '') or getattr(obj.mentor, 'email', '')
-        mentor_photo = ''
-        mentor_profile = getattr(obj.mentor, 'mentor_profile', None)
-        if mentor_profile and getattr(mentor_profile, 'photo', None):
-            mentor_photo = build_absolute_media_url(self.context.get('request'), mentor_profile.photo)
-
-        return {
-            'name': mentor_name,
-            'photo': mentor_photo,
-        }
+        return serialize_course_mentor(self.context.get('request'), obj.mentor)
 
     def get_category(self, obj):
         if not obj.category:
@@ -385,6 +418,37 @@ class PublicCourseDetailSerializer(PublicCourseListSerializer):
     def get_certificatePoints(self, obj):
         points = [point.text for point in obj.certificate_points.all()]
         return points or DEFAULT_CERTIFICATE_POINTS
+
+    def get_platformMentors(self, obj):
+        request = self.context.get('request')
+        profiles = (
+            MentorProfile.objects.filter(user__role='mentor', user__is_active=True)
+            .select_related('user')
+            .order_by('-experience', 'user__first_name', 'user__last_name', 'user__id')
+        )
+
+        mentors = [
+            serialize_platform_mentor(request, profile, associated_mentor_id=obj.mentor_id)
+            for profile in profiles
+        ]
+
+        if not any(mentor['id'] == str(obj.mentor_id) for mentor in mentors):
+            course_mentor = serialize_course_mentor(request, obj.mentor)
+            mentors.insert(
+                0,
+                {
+                    'id': course_mentor['id'],
+                    'name': course_mentor['name'],
+                    'role': course_mentor['role'],
+                    'photoUrl': course_mentor['photo'],
+                    'bio': '',
+                    'experience': 0,
+                    'company': course_mentor['company'],
+                    'associated': True,
+                },
+            )
+
+        return mentors
 
     def get_mentorSpotlights(self, obj):
         spotlights = [

@@ -1,4 +1,7 @@
+import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 const studentImages = [
   'https://ik.imagekit.io/sheryians/students/1764611471979-a5146ade-8ab9-4b7f-9855-83e80edf2e3f-1_all_6810_55Ht7UJe6.jpg?updatedAt=1764611473623',
@@ -7,15 +10,81 @@ const studentImages = [
   'https://ik.imagekit.io/sheryians/students/1763383043355-1000245810_Qyc5r9LWS.jpg?updatedAt=1763383046926',
 ];
 
-const Hero = () => {
-  return (
-    <section className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-black px-6 pb-20 pt-32 text-white md:px-8 md:pt-40">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(16,185,129,0.18)_0%,rgba(16,185,129,0.08)_22%,rgba(8,8,8,0.95)_58%,#000_100%)] pointer-events-none" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[size:120px_120px] opacity-25 pointer-events-none" />
-      <div className="absolute inset-x-0 bottom-[18%] h-px bg-white/10 pointer-events-none" />
-      <div className="absolute left-1/2 top-[26%] h-[26rem] w-[72rem] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(16,185,129,0.18)_0%,rgba(16,185,129,0.05)_38%,transparent_72%)] blur-3xl pointer-events-none" />
+let heroGsapRegistered = false;
 
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+const registerHeroGsap = () => {
+  if (!heroGsapRegistered && typeof window !== 'undefined') {
+    gsap.registerPlugin(ScrollTrigger);
+    heroGsapRegistered = true;
+  }
+};
+
+const Hero = () => {
+  const heroRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return undefined;
+    }
+
+    registerHeroGsap();
+
+    const ctx = gsap.context(() => {
+      const root = heroRef.current;
+      if (!root) {
+        return;
+      }
+
+      gsap.set('[data-hero-depth]', { transformPerspective: 1400 });
+
+      const timeline = gsap.timeline({
+        defaults: { ease: 'none' },
+        scrollTrigger: {
+          trigger: root,
+          start: 'top top',
+          end: 'bottom top',
+          scrub: 1.1,
+        },
+      });
+
+      timeline
+        .to('[data-hero-heading]', { yPercent: -18, opacity: 0.68, scale: 0.97 }, 0)
+        .to('[data-hero-copy]', { yPercent: -22, opacity: 0.32 }, 0)
+        .to('[data-hero-proof]', { yPercent: -16, opacity: 0.38 }, 0.02)
+        .to('[data-hero-cta]', { yPercent: -20, opacity: 0.18 }, 0.04)
+        .to('[data-hero-badge]', { yPercent: -12, opacity: 0.55 }, 0.02)
+        .to('[data-hero-glow]', { yPercent: -14, scale: 1.18, opacity: 0.58 }, 0)
+        .to('[data-hero-grid]', { yPercent: 10, opacity: 0.16 }, 0)
+        .to('[data-hero-lines]', { yPercent: 14, opacity: 0.3 }, 0)
+        .to('[data-hero-depth]', { yPercent: -8 }, 0);
+    }, heroRef);
+
+    return () => {
+      ctx.revert();
+    };
+  }, []);
+
+  return (
+    <section
+      ref={heroRef}
+      className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-black px-6 pb-20 pt-32 text-white md:px-8 md:pt-40"
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(16,185,129,0.18)_0%,rgba(16,185,129,0.08)_22%,rgba(8,8,8,0.95)_58%,#000_100%)] pointer-events-none" />
+      <div
+        data-hero-grid
+        className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[size:120px_120px] opacity-25 pointer-events-none"
+      />
+      <div className="absolute inset-x-0 bottom-[18%] h-px bg-white/10 pointer-events-none" />
+      <div
+        data-hero-glow
+        className="absolute left-1/2 top-[26%] h-[26rem] w-[72rem] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(16,185,129,0.18)_0%,rgba(16,185,129,0.05)_38%,transparent_72%)] blur-3xl pointer-events-none"
+      />
+
+      <div data-hero-lines className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute left-0 top-[31%] h-px w-[18%] bg-gradient-to-r from-transparent via-white/12 to-transparent" />
         <div className="absolute right-0 top-[31%] h-px w-[18%] bg-gradient-to-l from-transparent via-white/12 to-transparent" />
         <div className="absolute left-[12%] top-0 h-[46%] w-px bg-gradient-to-b from-transparent via-white/10 to-transparent" />
@@ -29,6 +98,7 @@ const Hero = () => {
 
       <div className="relative z-10 flex w-full flex-col items-center justify-center gap-3 text-center md:gap-6">
         <motion.h4
+          data-hero-badge
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-2 text-center text-sm font-medium uppercase tracking-[0.1em] text-brand md:text-[1.05rem]"
@@ -37,6 +107,7 @@ const Hero = () => {
         </motion.h4>
 
         <motion.div
+          data-hero-heading
           initial={{ opacity: 0, y: 26 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.08 }}
@@ -56,6 +127,7 @@ const Hero = () => {
         </motion.div>
 
         <motion.p
+          data-hero-copy
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.16 }}
@@ -66,6 +138,8 @@ const Hero = () => {
         </motion.p>
 
         <motion.div
+          data-hero-proof
+          data-hero-depth
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.22 }}
@@ -92,6 +166,8 @@ const Hero = () => {
         </motion.div>
 
         <motion.div
+          data-hero-cta
+          data-hero-depth
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}

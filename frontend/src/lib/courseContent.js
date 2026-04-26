@@ -24,6 +24,17 @@ const normalizePrice = (value) => {
   return Number.isFinite(amount) ? amount : 0;
 };
 
+const normalizeMentor = (mentor, index) => ({
+  id: mentor?.id || `${mentor?.name || 'mentor'}-${index}`,
+  name: mentor?.name || 'Mentor',
+  role: mentor?.role || mentor?.expertise || mentor?.company || 'Platform Mentor',
+  photoUrl: mentor?.photoUrl || mentor?.photo || '',
+  bio: mentor?.bio || '',
+  company: mentor?.company || '',
+  experience: Number(mentor?.experience || 0),
+  associated: Boolean(mentor?.associated),
+});
+
 export const getCourseIdentifier = (course) => {
   return course?.slug || course?._id || course?.id || '';
 };
@@ -109,7 +120,12 @@ export const normalizeCourseDetail = (course) => {
   const technologySections = Array.isArray(course?.technologySections) ? course.technologySections : [];
   const builderItems = Array.isArray(course?.builderItems) ? course.builderItems : [];
   const certificatePoints = Array.isArray(course?.certificatePoints) ? course.certificatePoints : [];
-  const mentorSpotlights = Array.isArray(course?.mentorSpotlights) ? course.mentorSpotlights : [];
+  const mentorSpotlights = Array.isArray(course?.mentorSpotlights)
+    ? course.mentorSpotlights.map((mentor, index) => normalizeMentor(mentor, index))
+    : [];
+  const platformMentors = Array.isArray(course?.platformMentors)
+    ? course.platformMentors.map((mentor, index) => normalizeMentor(mentor, index))
+    : [];
 
   return {
     ...normalizedCard,
@@ -135,6 +151,7 @@ export const normalizeCourseDetail = (course) => {
     technologySections,
     builderItems,
     certificatePoints,
+    platformMentors,
     mentorSpotlights,
     durationWeeks: course?.durationWeeks || course?.duration_weeks || normalizedCard.featuredCard.durationValue || 0,
     levelLabel: course?.levelLabel || course?.level || 'Beginner',

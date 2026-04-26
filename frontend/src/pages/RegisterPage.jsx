@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, ArrowRight, Brain, Lock, Mail, User } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
 import { storeAuthSession } from '../lib/auth';
 import { extractApiError } from '../lib/errors';
-import { IS_GOOGLE_AUTH_ENABLED } from '../lib/googleAuth';
+import { GOOGLE_AUTH_CONFIG, IS_GOOGLE_AUTH_ENABLED } from '../lib/googleAuth';
 
 const GoogleIcon = () => (
   <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -17,8 +17,36 @@ const GoogleIcon = () => (
   </svg>
 );
 
+const getGoogleAuthErrorMessage = (errorResponse) => {
+  const errorCode = errorResponse?.error || '';
+
+  if (errorCode === 'popup_closed_by_user' || errorCode === 'popup_closed') {
+    return 'Google sign-up popup was closed before the request finished.';
+  }
+
+  if (errorCode === 'popup_failed_to_open') {
+    return 'Browser blocked the Google popup. Allow popups for this site and try again.';
+  }
+
+  if (errorCode === 'access_denied') {
+    return 'Google sign-in request was denied. Check that this client ID and origin are registered in Google Cloud Console.';
+  }
+
+  if (errorCode === 'idpiframe_initialization_failed') {
+    return GOOGLE_AUTH_CONFIG.reason || 'Google sign-in could not initialize on this origin.';
+  }
+
+  return (
+    GOOGLE_AUTH_CONFIG.reason
+    || errorResponse?.error_description
+    || 'Google sign-in failed. Check your Google OAuth client origin and redirect configuration.'
+  );
+};
+
 const GoogleRegisterButton = ({ isLoading, onError, onNewSession }) => {
   const loginWithGoogle = useGoogleLogin({
+    flow: 'implicit',
+    scope: 'openid email profile',
     onSuccess: async (tokenResponse) => {
       try {
         const { response, payload } = await apiFetch('auth/google-login/', {
@@ -35,8 +63,11 @@ const GoogleRegisterButton = ({ isLoading, onError, onNewSession }) => {
         onError(err.message || 'Google login failed.');
       }
     },
-    onError: () => {
-      onError('Google login was cancelled or failed.');
+    onError: (errorResponse) => {
+      onError(getGoogleAuthErrorMessage(errorResponse));
+    },
+    onNonOAuthError: (nonOAuthError) => {
+      onError(getGoogleAuthErrorMessage({ error: nonOAuthError }));
     },
   });
 
@@ -55,6 +86,7 @@ const GoogleRegisterButton = ({ isLoading, onError, onNewSession }) => {
 
 const RegisterPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -64,6 +96,8 @@ const RegisterPage = () => {
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const nextPath = new URLSearchParams(location.search).get('next') || '';
+  const studentDestination = nextPath || '/dashboard';
 
   useEffect(() => {
     document.title = 'Register | Design School';
@@ -71,12 +105,12 @@ const RegisterPage = () => {
 
   const handleGoogleSession = (payload) => {
     if (payload.is_new_user || !payload.user?.is_phone_verified) {
-      navigate('/verify-phone', { state: { email: payload.user?.email } });
+      navigate('/verify-phone', { state: { email: payload.user?.email, next: studentDestination } });
       return;
     }
 
     storeAuthSession(payload);
-    navigate('/dashboard');
+    navigate(studentDestination);
   };
 
   const handleChange = (event) => {
@@ -130,6 +164,8 @@ const RegisterPage = () => {
         state: {
           email,
           firstName,
+          lastName,
+          next: studentDestination,
         },
       });
     } catch (err) {
@@ -178,7 +214,7 @@ const RegisterPage = () => {
           </div>
 
           <div className="flex items-center gap-4 text-sm text-zinc-500">
-            <span>© 2026 Design School</span>
+            <span>&copy; 2026 Design School</span>
             <span className="h-1 w-1 rounded-full bg-zinc-700" />
             <span>Secure onboarding</span>
           </div>
@@ -197,7 +233,7 @@ const RegisterPage = () => {
 
             <div className="mb-10 hidden lg:block">
               <h2 className="mb-2 text-3xl font-bold tracking-tight">Create an account</h2>
-              <p className="text-zinc-400">We’ll get you verified, enrolled, and into your student dashboard fast.</p>
+              <p className="text-zinc-400">We'll get you verified, enrolled, and into your student dashboard fast.</p>
             </div>
 
             {IS_GOOGLE_AUTH_ENABLED ? (
@@ -215,8 +251,17 @@ const RegisterPage = () => {
                 </div>
               </>
             ) : (
-              <div className="mb-8 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-zinc-400">
-                Google sign-up is not configured yet. You can still register with email below.
+              <div className="mb-8">
+                <div className="flex items-center">
+                  <div className="flex-1 border-t border-white/10" />
+                  <span className="px-4 text-xs font-medium uppercase tracking-wider text-zinc-500">Register with email</span>
+                  <div className="flex-1 border-t border-white/10" />
+                </div>
+                {GOOGLE_AUTH_CONFIG.userMessage ? (
+                  <p className="mt-3 text-center text-sm leading-relaxed text-zinc-500">
+                    {GOOGLE_AUTH_CONFIG.userMessage}
+                  </p>
+                ) : null}
               </div>
             )}
 
@@ -342,7 +387,10 @@ const RegisterPage = () => {
 
             <p className="mt-8 text-center text-sm text-zinc-400">
               Already have an account?{' '}
-              <Link to="/login" className="font-medium text-white underline decoration-white/30 underline-offset-4 transition-colors hover:text-brand">
+              <Link
+                to={nextPath ? `/login?next=${encodeURIComponent(nextPath)}` : '/login'}
+                className="font-medium text-white underline decoration-white/30 underline-offset-4 transition-colors hover:text-brand"
+              >
                 Sign in
               </Link>
             </p>
@@ -354,3 +402,4 @@ const RegisterPage = () => {
 };
 
 export default RegisterPage;
+

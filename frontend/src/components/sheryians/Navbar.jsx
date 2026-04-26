@@ -3,7 +3,14 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Brain, Menu, X } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../../lib/api';
-import { clearAuthSession, getRefreshToken, getStoredUser, isAuthenticated, subscribeToAuthChanges } from '../../lib/auth';
+import {
+  clearAuthSession,
+  getRefreshToken,
+  getStoredUser,
+  isAdminUser,
+  isAuthenticated,
+  subscribeToAuthChanges,
+} from '../../lib/auth';
 
 const Navbar = () => {
   const location = useLocation();
@@ -87,7 +94,7 @@ const Navbar = () => {
     }
 
     if (href === '/dashboard') {
-      return location.pathname === '/dashboard';
+      return location.pathname === '/dashboard' || location.pathname.startsWith('/dashboard/');
     }
 
     return location.pathname === href;
@@ -115,8 +122,8 @@ const Navbar = () => {
   const actionLinks = session.authenticated
     ? [
         {
-          label: session.user?.role === 'student' ? 'Dashboard' : 'Account',
-          to: '/dashboard',
+          label: isAdminUser() ? 'Admin Panel' : 'Dashboard',
+          to: isAdminUser() ? '/admin-panel' : '/dashboard',
           variant: 'primary',
         },
       ]
@@ -177,10 +184,10 @@ const Navbar = () => {
                 {session.user?.first_name || session.user?.email || 'Student'}
               </div>
               <Link
-                to="/dashboard"
+                to={isAdminUser() ? '/admin-panel' : '/dashboard'}
                 className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-black shadow-[0_10px_30px_rgba(16,185,129,0.25)] transition-colors hover:bg-emerald-400"
               >
-                Dashboard
+                {isAdminUser() ? 'Admin Panel' : 'Dashboard'}
               </Link>
               <button
                 type="button"
@@ -238,11 +245,11 @@ const Navbar = () => {
               {session.authenticated ? (
                 <>
                   <Link
-                    to="/dashboard"
+                    to={isAdminUser() ? '/admin-panel' : '/dashboard'}
                     className="text-center rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-black shadow-[0_10px_30px_rgba(16,185,129,0.25)] transition-colors hover:bg-emerald-400"
                     onClick={() => setMenuOpen(false)}
                   >
-                    Dashboard
+                    {isAdminUser() ? 'Admin Panel' : 'Dashboard'}
                   </Link>
                   <button
                     type="button"

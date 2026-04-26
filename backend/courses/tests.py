@@ -4,6 +4,8 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
+from mentors.models import MentorProfile
+
 from .models import (
     Category,
     Course,
@@ -125,3 +127,42 @@ class PublicCourseApiTests(APITestCase):
             [item['name'] for item in payload['technologySections'][0]['items']],
             ['React', 'JavaScript'],
         )
+
+    def test_public_course_detail_includes_platform_mentors_with_associated_mentor(self):
+        course = self.create_course(title='UI UX Design')
+
+        MentorProfile.objects.update_or_create(
+            user=self.mentor,
+            defaults={
+                'expertise': 'Lead UI/UX Mentor',
+                'current_company': 'Eduflow Studio',
+                'experience': 7,
+            },
+        )
+
+        another_mentor = User.objects.create_user(
+            username='mentor2',
+            email='mentor2@example.com',
+            password='Testpass123!',
+            role='mentor',
+            first_name='Product',
+            last_name='Coach',
+        )
+        MentorProfile.objects.update_or_create(
+            user=another_mentor,
+            defaults={
+                'expertise': 'Product Design Coach',
+                'current_company': 'PixelCraft',
+                'experience': 5,
+            },
+        )
+
+        response = self.client.get(reverse('public_courses_detail', args=[course.slug]))
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()['data']['course']
+        self.assertEqual(len(payload['platformMentors']), 2)
+        associated_mentor = next((mentor for mentor in payload['platformMentors'] if mentor['associated']), None)
+        self.assertIsNotNone(associated_mentor)
+        self.assertEqual(associated_mentor['id'], str(self.mentor.id))
+        self.assertEqual(associated_mentor['role'], 'Lead UI/UX Mentor')

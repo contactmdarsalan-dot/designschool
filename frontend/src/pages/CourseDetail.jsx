@@ -16,7 +16,9 @@ import { useParams } from 'react-router-dom';
 import Navbar from '../components/sheryians/Navbar';
 import Footer from '../components/sheryians/Footer';
 import { apiFetch } from '../lib/api';
+import { isAuthenticated } from '../lib/auth';
 import { formatCurrency, normalizeCourseDetail } from '../lib/courseContent';
+import useSectionReveal from '../hooks/useSectionReveal';
 
 const CLOUD_BASE = 'https://dfdx9u0psdezh.cloudfront.net';
 const COURSE_BG =
@@ -40,6 +42,53 @@ const certificateFallback = [
   'Receive expert mentorship and structured evaluation',
   'Earn a recognized certificate after completion',
 ];
+
+const getMentorKey = (mentor, index = 0) => mentor?.id || `${mentor?.name || 'mentor'}-${index}`;
+
+const buildMentorShowcase = (platformMentors = [], fallbackMentor = null) => {
+  const dedupedMentors = [];
+  const seenKeys = new Set();
+
+  platformMentors.forEach((mentor, index) => {
+    const key = getMentorKey(mentor, index);
+    if (!seenKeys.has(key)) {
+      seenKeys.add(key);
+      dedupedMentors.push(mentor);
+    }
+  });
+
+  let associatedMentor = dedupedMentors.find((mentor) => mentor.associated);
+
+  if (!associatedMentor && fallbackMentor?.name) {
+    associatedMentor = {
+      id: fallbackMentor.id || 'course-associated-mentor',
+      name: fallbackMentor.name,
+      role: fallbackMentor.role || 'Course Mentor',
+      photoUrl: fallbackMentor.photo || '',
+      associated: true,
+    };
+
+    const fallbackKey = getMentorKey(associatedMentor);
+    if (!seenKeys.has(fallbackKey)) {
+      seenKeys.add(fallbackKey);
+      dedupedMentors.unshift(associatedMentor);
+    }
+  }
+
+  if (!associatedMentor) {
+    return dedupedMentors.slice(0, 5);
+  }
+
+  const others = dedupedMentors.filter((mentor, index) => {
+    return getMentorKey(mentor, index) !== getMentorKey(associatedMentor);
+  });
+
+  return [
+    ...others.slice(0, 2),
+    associatedMentor,
+    ...others.slice(2, 4),
+  ].filter(Boolean);
+};
 
 const toYoutubeEmbedUrl = (videoUrl) => {
   const fallback = 'https://www.youtube.com/embed/k2PLDtpRkwQ';
@@ -122,8 +171,8 @@ const CourseModuleItem = ({ module, index, isOpen, onToggle }) => {
   );
 };
 
-const MentorCarousel = ({ mentors }) => {
-  const [active, setActive] = useState(0);
+const MentorCarousel = ({ mentors, initialActive = 0 }) => {
+  const [active, setActive] = useState(initialActive);
   const total = mentors.length;
 
   if (total === 0) {
@@ -195,12 +244,25 @@ const MentorCarousel = ({ mentors }) => {
               />
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.25),transparent_58%)] px-6 text-center">
-                <p className="text-2xl font-semibold text-white">{card.mentor.name || 'Course Mentor'}</p>
-                <p className="mt-2 text-sm uppercase tracking-[0.24em] text-emerald-300">
-                  {card.mentor.role || 'Instructor'}
-                </p>
+                <div className="flex h-24 w-24 items-center justify-center rounded-full border border-white/20 bg-white/5 text-3xl font-semibold text-white">
+                  {(card.mentor.name || 'M').slice(0, 1)}
+                </div>
               </div>
             )}
+
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/88 to-transparent px-5 pb-6 pt-20 text-left">
+              {card.mentor.associated ? (
+                <span className="inline-flex rounded-full border border-emerald-400/35 bg-emerald-500/15 px-3 py-1 text-[10px] uppercase tracking-[0.24em] text-emerald-300">
+                  Course Mentor
+                </span>
+              ) : null}
+              <p className="mt-4 text-2xl font-semibold text-white">
+                {card.mentor.name || 'Course Mentor'}
+              </p>
+              <p className="mt-2 text-xs uppercase tracking-[0.24em] text-emerald-300">
+                {card.mentor.role || 'Instructor'}
+              </p>
+            </div>
           </button>
         ))}
       </div>
@@ -228,6 +290,7 @@ const MentorCarousel = ({ mentors }) => {
 };
 
 const CourseDetail = () => {
+  const pageRef = useSectionReveal();
   const params = useParams();
   const requestedCourseId = params.id;
   const [course, setCourse] = useState(null);
@@ -334,25 +397,35 @@ const CourseDetail = () => {
   const builderItems = course.builderItems || [];
   const certificatePoints =
     course.certificatePoints.length > 0 ? course.certificatePoints : certificateFallback;
-  const mentorSpotlights = course.mentorSpotlights || [];
+  const mentorShowcase = buildMentorShowcase(
+    course.platformMentors.length > 0 ? course.platformMentors : course.mentorSpotlights,
+    course.mentor,
+  );
+  const associatedMentorIndex = Math.max(
+    mentorShowcase.findIndex((mentor) => mentor.associated),
+    0,
+  );
   const tags = course.tags || [];
-  const checkoutHref = `/checkout?courseId=${course.id}&batchId=${course?.schedule?.batchId || course.id}`;
+  const enrollmentPath = `/dashboard/join-course?course=${encodeURIComponent(course.slug || course.id)}`;
+  const enrollmentHref = isAuthenticated()
+    ? enrollmentPath
+    : `/login?next=${encodeURIComponent(enrollmentPath)}`;
   const heroVideoEmbed = toYoutubeEmbedUrl(course.displayVideo);
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-emerald-500/30 selection:text-emerald-100">
       <Navbar />
 
-      <main className="relative overflow-x-hidden pb-24 pt-28 md:pt-32">
+      <main ref={pageRef} className="relative overflow-x-hidden pb-24 pt-28 md:pt-32">
         <img
           src={COURSE_BG}
           alt="Background"
           className="pointer-events-none absolute left-0 top-0 z-0 w-full object-contain opacity-30 blur-2xl"
         />
 
-        <section className="relative z-10 px-4 md:px-8">
+        <section className="relative z-10 px-4 md:px-8" data-gsap-section data-motion="hero">
           <div className="mx-auto grid max-w-[1400px] gap-8 lg:grid-cols-[1.95fr_1fr]">
-            <div className="self-start overflow-hidden rounded-2xl border border-[#4E4A48]/85 bg-black">
+            <div className="self-start overflow-hidden rounded-2xl border border-[#4E4A48]/85 bg-black" data-gsap-item>
               <div className="relative">
                 <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-24 bg-gradient-to-b from-black/80 via-black/45 to-transparent" />
 
@@ -382,6 +455,7 @@ const CourseDetail = () => {
                   title={course.title}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   loading="lazy"
+                  data-gsap-media
                 />
               </div>
 
@@ -405,7 +479,7 @@ const CourseDetail = () => {
               </div>
             </div>
 
-            <aside className="h-fit self-start rounded-2xl border border-[#4E4A48] bg-[radial-gradient(120%_120%_at_0%_0%,rgba(29,130,72,0.33),rgba(0,0,0,0.96)_73%)] p-5 md:p-7 lg:sticky lg:top-28">
+            <aside className="h-fit self-start rounded-2xl border border-[#4E4A48] bg-[radial-gradient(120%_120%_at_0%_0%,rgba(29,130,72,0.33),rgba(0,0,0,0.96)_73%)] p-5 md:p-7 lg:sticky lg:top-28" data-gsap-item>
               <div className="flex flex-wrap gap-2.5">
                 {course.heroHighlights.map((item) => (
                   <div
@@ -444,29 +518,25 @@ const CourseDetail = () => {
               </div>
 
               <a
-                href={checkoutHref}
+                href={enrollmentHref}
                 className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(95deg,#169254_6%,#052f1f_235%)] px-6 py-4 text-lg font-semibold text-white transition hover:brightness-110"
               >
-                Join Cohort Now
+                Join Course Now
                 <ArrowRight className="h-5 w-5" />
               </a>
 
-              {course.syllabusUrl ? (
-                <a
-                  href={course.syllabusUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#8D8D8D] bg-[linear-gradient(90deg,#000_0%,#252528_100%)] px-6 py-4 text-lg font-medium text-white"
-                >
-                  View Full Syllabus
-                  <ArrowRight className="h-5 w-5" />
-                </a>
-              ) : null}
+              <a
+                href={enrollmentHref}
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#8D8D8D] bg-[linear-gradient(90deg,#000_0%,#252528_100%)] px-6 py-4 text-lg font-medium text-white"
+              >
+                Join Course Now
+                <ArrowRight className="h-5 w-5" />
+              </a>
             </aside>
           </div>
         </section>
 
-        <section className="relative z-10 mt-16 overflow-hidden border-y border-white/6 px-4 py-16 md:mt-20 md:px-8 md:py-24">
+        <section className="relative z-10 mt-16 overflow-hidden border-y border-white/6 px-4 py-16 md:mt-20 md:px-8 md:py-24" data-gsap-section data-motion="up">
           <img
             src={BUILD_PRODUCTS_GLOW}
             alt=""
@@ -475,14 +545,14 @@ const CourseDetail = () => {
           <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_20%,rgba(16,185,129,0.2),transparent_55%)]" />
 
           <div className="relative mx-auto max-w-7xl text-center">
-            <h2 className="bg-[linear-gradient(180deg,#7df6a3_0%,#22c55e_45%,#0f8b3b_100%)] bg-clip-text text-[2.3rem] font-black leading-[0.98] tracking-tight text-transparent drop-shadow-[0_10px_45px_rgba(34,197,94,0.35)] md:text-[6.8rem]">
+            <h2 className="bg-[linear-gradient(180deg,#7df6a3_0%,#22c55e_45%,#0f8b3b_100%)] bg-clip-text text-[2.3rem] font-black leading-[0.98] tracking-tight text-transparent drop-shadow-[0_10px_45px_rgba(34,197,94,0.35)] md:text-[6.8rem]" data-gsap-item>
               Build Real Products
             </h2>
-            <p className="mx-auto mt-4 max-w-4xl text-[1.7rem] font-light leading-tight text-white/92 md:mt-5 md:text-[4.4rem]">
+            <p className="mx-auto mt-4 max-w-4xl text-[1.7rem] font-light leading-tight text-white/92 md:mt-5 md:text-[4.4rem]" data-gsap-item>
               That Actually Matters To The World
             </p>
 
-            <div className="relative mx-auto mt-10 max-w-5xl md:mt-14">
+            <div className="relative mx-auto mt-10 max-w-5xl md:mt-14" data-gsap-item data-gsap-media>
               <img
                 src={BUILD_PRODUCTS_IMAGE}
                 alt="Build real products visual"
@@ -494,18 +564,18 @@ const CourseDetail = () => {
         </section>
 
         {comparison.left.length > 0 || comparison.right.length > 0 ? (
-          <section className="relative z-10 mt-24 px-4 md:px-8">
+          <section className="relative z-10 mt-24 px-4 md:px-8" data-gsap-section data-motion="left">
             <div className="mx-auto max-w-6xl text-center">
-              <div className="inline-flex rounded-sm border border-emerald-400/35 bg-emerald-400/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-300">
+              <div className="inline-flex rounded-sm border border-emerald-400/35 bg-emerald-400/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-300" data-gsap-item>
                 Comparison
               </div>
-              <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]">
+              <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]" data-gsap-item>
                 What Sets This Course Apart
               </h2>
             </div>
 
             <div className="mx-auto mt-10 grid max-w-6xl gap-8 rounded-3xl border border-[#302C2A] p-5 md:p-8 lg:grid-cols-2">
-              <div className="rounded-3xl border border-emerald-400/20 bg-[radial-gradient(64%_90%_at_50%_8%,rgba(80,164,109,0.1)_0%,rgba(8,8,8,0.26)_58%,rgba(7,7,7,0.36)_100%)] p-6">
+              <div className="rounded-3xl border border-emerald-400/20 bg-[radial-gradient(64%_90%_at_50%_8%,rgba(80,164,109,0.1)_0%,rgba(8,8,8,0.26)_58%,rgba(7,7,7,0.36)_100%)] p-6" data-gsap-item>
                 <img
                   src={`${CLOUD_BASE}/logos/full-logo.webp`}
                   alt="Design School"
@@ -521,7 +591,7 @@ const CourseDetail = () => {
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-white/15 bg-[#151515]/70 p-6">
+              <div className="rounded-3xl border border-white/15 bg-[#151515]/70 p-6" data-gsap-item>
                 <h3 className="text-3xl font-light">Others</h3>
                 <div className="mt-6 space-y-4">
                   {comparison.right.map((item) => (
@@ -537,7 +607,7 @@ const CourseDetail = () => {
         ) : null}
 
         {course.technologySections.length > 0 ? (
-          <section className="relative z-10 mt-28 overflow-hidden px-4 py-20 md:px-8 md:py-28">
+          <section className="relative z-10 mt-28 overflow-hidden px-4 py-20 md:px-8 md:py-28" data-gsap-section data-motion="right">
             <img
               src={TOOLS_BG}
               alt=""
@@ -545,14 +615,14 @@ const CourseDetail = () => {
             />
 
             <div className="relative mx-auto max-w-6xl text-center">
-              <div className="inline-flex rounded-sm border border-emerald-400/35 bg-emerald-400/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-300">
+              <div className="inline-flex rounded-sm border border-emerald-400/35 bg-emerald-400/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-300" data-gsap-item>
                 Technologies
               </div>
-              <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]">
+              <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]" data-gsap-item>
                 Industry Tools You&apos;ll Master
               </h2>
 
-              <div className="mt-12 flex flex-wrap justify-center gap-3 md:gap-5">
+              <div className="mt-12 flex flex-wrap justify-center gap-3 md:gap-5" data-gsap-item>
                 {course.technologySections.map((tab) => (
                   <button
                     key={tab.name}
@@ -573,7 +643,7 @@ const CourseDetail = () => {
                 ))}
               </div>
 
-              <div className="mt-8 rounded-3xl border border-white/20 bg-black/25 px-6 py-10 md:px-8 md:py-12">
+              <div className="mt-8 rounded-3xl border border-white/20 bg-black/25 px-6 py-10 md:px-8 md:py-12" data-gsap-item>
                 <h3 className="mb-10 text-3xl font-semibold tracking-wide md:text-4xl">TOOLS AND TECHNOLOGIES</h3>
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                   {(currentTechnologySection?.items || []).map((item) => (
@@ -599,10 +669,11 @@ const CourseDetail = () => {
               </div>
 
               <a
-                href={checkoutHref}
+                href={enrollmentHref}
                 className="mt-14 inline-flex items-center gap-2 rounded-2xl bg-[linear-gradient(95deg,#169254_6%,#052f1f_235%)] px-8 py-4 text-lg font-semibold text-white shadow-[0_10px_20px_0px_rgba(113,215,148,0.3)]"
+                data-gsap-item
               >
-                Join Cohort Now
+                Join Course Now
                 <ArrowRight className="h-5 w-5" />
               </a>
             </div>
@@ -612,19 +683,21 @@ const CourseDetail = () => {
         <section
           id="modules_and_curriculum"
           className="relative z-10 mx-4 mt-24 rounded-3xl bg-[#EEEEEE] px-4 py-16 text-black md:mx-8 md:px-8"
+          data-gsap-section
+          data-motion="up"
         >
           <div className="mx-auto max-w-7xl">
             <div className="text-center">
-              <div className="inline-flex rounded-sm border border-emerald-600/30 bg-emerald-600/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-700">
+              <div className="inline-flex rounded-sm border border-emerald-600/30 bg-emerald-600/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-700" data-gsap-item>
                 Curriculum
               </div>
-              <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]">
+              <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]" data-gsap-item>
                 Structured Curriculum Designed For Real Growth
               </h2>
             </div>
 
             <div className="mt-10 grid gap-6 lg:grid-cols-[0.42fr_0.58fr] lg:gap-10">
-              <aside className="h-fit rounded-2xl border border-black/10 bg-white p-6 lg:sticky lg:top-28">
+              <aside className="h-fit rounded-2xl border border-black/10 bg-white p-6 lg:sticky lg:top-28" data-gsap-item>
                 <h3 className="text-2xl font-semibold text-[#111827]">Inside This Program</h3>
                 <p className="mt-3 text-[#374151]">
                   Duration: <span className="font-semibold">{course.durationWeeks} weeks</span>
@@ -670,7 +743,7 @@ const CourseDetail = () => {
                 ) : null}
               </aside>
 
-              <div className="space-y-4">
+              <div className="space-y-4" data-gsap-item>
                 {course.curriculum.length > 0 ? (
                   course.curriculum.map((module, index) => (
                     <CourseModuleItem
@@ -692,16 +765,16 @@ const CourseDetail = () => {
         </section>
 
         {builderItems.length > 0 ? (
-          <section className="relative z-10 mt-24 px-4 md:px-8">
+          <section className="relative z-10 mt-24 px-4 md:px-8" data-gsap-section data-motion="zoom">
             <div className="mx-auto max-w-6xl text-center">
-              <div className="inline-flex rounded-sm border border-emerald-400/35 bg-emerald-400/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-300">
+              <div className="inline-flex rounded-sm border border-emerald-400/35 bg-emerald-400/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-300" data-gsap-item>
                 Not Just Jobs
               </div>
-              <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]">
+              <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]" data-gsap-item>
                 We Also Support Builders.
               </h2>
 
-              <div className="mt-10 grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-8">
+              <div className="mt-10 grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-8" data-gsap-item>
                 {builderItems.map((item) => {
                   const Icon = builderIconMap[item.iconName] || Rocket;
                   return (
@@ -728,18 +801,18 @@ const CourseDetail = () => {
           </section>
         ) : null}
 
-        <section className="relative z-10 mt-24 px-4 md:px-8">
+        <section className="relative z-10 mt-24 px-4 md:px-8" data-gsap-section data-motion="left">
           <div className="mx-auto max-w-6xl text-center">
-            <div className="inline-flex rounded-sm border border-emerald-400/35 bg-emerald-400/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-300">
+            <div className="inline-flex rounded-sm border border-emerald-400/35 bg-emerald-400/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-300" data-gsap-item>
               Certification
             </div>
-            <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]">
+            <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]" data-gsap-item>
               Get Certified with Recognized Validation
             </h2>
           </div>
 
           <div className="mx-auto mt-8 flex max-w-6xl flex-col-reverse gap-10 rounded-2xl border border-[#302C2A] p-8 lg:flex-row lg:p-14">
-            <div className="lg:w-[45%]">
+            <div className="lg:w-[45%]" data-gsap-item>
               <h3 className="text-5xl font-semibold leading-[1.15] md:text-6xl">
                 Earn Certificate of <span className="text-emerald-400">Completion</span>
               </h3>
@@ -754,7 +827,7 @@ const CourseDetail = () => {
               </div>
             </div>
 
-            <div className="relative flex justify-end lg:w-[55%]">
+            <div className="relative flex justify-end lg:w-[55%]" data-gsap-item data-gsap-media>
               <img
                 src={`${CLOUD_BASE}/courses/jobready3certificate.webp`}
                 alt="Certificate"
@@ -764,32 +837,38 @@ const CourseDetail = () => {
           </div>
         </section>
 
-        {mentorSpotlights.length > 0 ? (
-          <section className="relative z-10 mt-24 px-4 md:px-8">
+        {mentorShowcase.length > 0 ? (
+          <section className="relative z-10 mt-24 px-4 md:px-8" data-gsap-section data-motion="hero">
             <div className="mx-auto max-w-6xl text-center">
-              <div className="inline-flex rounded-sm border border-emerald-400/35 bg-emerald-400/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-300">
+              <div className="inline-flex rounded-sm border border-emerald-400/35 bg-emerald-400/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-300" data-gsap-item>
                 Our Team
               </div>
-              <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]">
+              <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]" data-gsap-item>
                 Meet the experts behind your success!
               </h2>
             </div>
-            <MentorCarousel mentors={mentorSpotlights} />
+            <div data-gsap-item>
+              <MentorCarousel
+                key={`mentor-carousel-${associatedMentorIndex}-${mentorShowcase.length}`}
+                mentors={mentorShowcase}
+                initialActive={associatedMentorIndex}
+              />
+            </div>
           </section>
         ) : null}
 
         {course.faqs.length > 0 ? (
-          <section className="relative z-10 mt-24 px-4 pb-20 md:px-8">
+          <section className="relative z-10 mt-24 px-4 pb-20 md:px-8" data-gsap-section data-motion="up">
             <div className="mx-auto max-w-5xl text-center">
-              <div className="inline-flex rounded-sm border border-emerald-400/35 bg-emerald-400/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-300">
+              <div className="inline-flex rounded-sm border border-emerald-400/35 bg-emerald-400/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-300" data-gsap-item>
                 Faqs
               </div>
-              <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]">
+              <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]" data-gsap-item>
                 Frequently Asked Questions From our Students
               </h2>
             </div>
 
-            <div className="mx-auto mt-8 flex max-w-5xl flex-col gap-4">
+            <div className="mx-auto mt-8 flex max-w-5xl flex-col gap-4" data-gsap-item>
               {course.faqs.map((faq, index) => {
                 const isOpen = openFaq === index;
                 return (
@@ -860,10 +939,10 @@ const CourseDetail = () => {
             Request Callback
           </a>
           <a
-            href={checkoutHref}
+            href={enrollmentHref}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-[linear-gradient(95deg,#169254_6%,#052f1f_235%)] px-6 py-3 text-lg font-semibold text-white"
           >
-            Buy Now
+            Join Course Now
             <ArrowRight className="h-5 w-5" />
           </a>
         </div>

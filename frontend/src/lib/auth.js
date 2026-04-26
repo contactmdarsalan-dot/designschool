@@ -32,6 +32,11 @@ export const getStoredUser = () => {
 
 export const isAuthenticated = () => Boolean(getAccessToken());
 
+export const isAdminUser = () => {
+  const user = getStoredUser();
+  return Boolean(user && (user.role === 'admin' || user.is_staff));
+};
+
 export const storeAuthSession = ({ access, refresh, user }) => {
   const currentWindow = safeWindow();
   if (!currentWindow) {

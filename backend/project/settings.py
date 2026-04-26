@@ -208,10 +208,16 @@ if IS_PRODUCTION:
         }
     }
 else:
+    sqlite_name = os.path.expandvars(os.path.expanduser(os.environ.get('SQLITE_NAME', 'db.sqlite3')))
+    sqlite_path = Path(sqlite_name)
+    if not sqlite_path.is_absolute():
+        sqlite_path = BASE_DIR / sqlite_path
+    sqlite_path.parent.mkdir(parents=True, exist_ok=True)
+
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / os.environ.get('SQLITE_NAME', 'db.sqlite3'),
+            'NAME': sqlite_path,
             'ATOMIC_REQUESTS': True,
         }
     }

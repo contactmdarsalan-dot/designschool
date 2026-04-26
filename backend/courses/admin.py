@@ -216,8 +216,13 @@ class CourseAdmin(admin.ModelAdmin):
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('name',)}
-    list_display = ('name', 'slug')
-    search_fields = ('name',)
+    list_display = ('name', 'slug', 'show_on_home', 'sort_order')
+    list_filter = ('show_on_home',)
+    search_fields = ('name', 'short_description')
+    fieldsets = (
+        ('Basic', {'fields': ('name', 'slug', 'short_description')}),
+        ('Homepage Impact Card', {'fields': ('image', 'badge', 'icon_name', 'show_on_home', 'sort_order')}),
+    )
 
 
 @admin.register(CourseReview)

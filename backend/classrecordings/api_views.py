@@ -1,24 +1,34 @@
-from rest_framework import viewsets, permissions
+from rest_framework import permissions, viewsets
 from .models import ClassRecording
 from .serializers import ClassRecordingSerializer
 from enrollments.models import Enrollment
 
-class ClassRecordingViewSet(viewsets.ReadOnlyModelViewSet):
+class ClassRecordingViewSet(viewsets.ModelViewSet):
     serializer_class = ClassRecordingSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         course_id = self.request.query_params.get('course_id')
-        if not course_id:
-            return ClassRecording.objects.none()
-        
-        is_enrolled = Enrollment.objects.filter(
+        queryset = ClassRecording.objects.select_related('course', 'uploaded_by').order_by('-uploaded_at')
+
+        if self.request.user.is_staff:
+            if course_id:
+                return queryset.filter(course_id=course_id)
+            return queryset
+
+        verified_course_ids = Enrollment.objects.filter(
             email__iexact=self.request.user.email,
-            course_id=course_id,
             status='verified'
-        ).exists()
+        ).values_list('course_id', flat=True)
 
-        if not is_enrolled and not self.request.user.is_staff:
-            return ClassRecording.objects.none()
+        queryset = queryset.filter(course_id__in=verified_course_ids)
+        if course_id:
+            queryset = queryset.filter(course_id=course_id)
+        return queryset
 
-        return ClassRecording.objects.select_related('course').filter(course_id=course_id).order_by('-uploaded_at')
+    def get_permissions(self):
+        if self.action in ('list', 'retrieve'):
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAdminUser()]
+
+    def perform_create(self, serializer):
+        serializer.save(uploaded_by=self.request.user)

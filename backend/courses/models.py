@@ -8,6 +8,17 @@ import uuid
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=120, unique=True, blank=True)
+    short_description = models.CharField(max_length=220, blank=True)
+    image = models.ImageField(
+        upload_to='courses/categories/',
+        validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp'])],
+        blank=True,
+        null=True,
+    )
+    badge = models.CharField(max_length=60, blank=True)
+    icon_name = models.CharField(max_length=80, blank=True, default='Brain')
+    show_on_home = models.BooleanField(default=True)
+    sort_order = models.PositiveIntegerField(default=0)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -16,6 +27,10 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ('sort_order', 'name')
+        verbose_name_plural = 'Categories'
 
 
 class Course(models.Model):

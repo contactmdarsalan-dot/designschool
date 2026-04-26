@@ -1,12 +1,12 @@
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import { GOOGLE_CLIENT_ID, IS_GOOGLE_AUTH_ENABLED } from '../lib/googleAuth';
+import { GOOGLE_AUTH_CONFIG } from '../lib/googleAuth';
 
 const RootProviders = ({ children }) => {
-  if (!IS_GOOGLE_AUTH_ENABLED) {
-    return children;
+  if (!GOOGLE_AUTH_CONFIG.enabled) {
+    return <>{children}</>;
   }
 
-  return <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>{children}</GoogleOAuthProvider>;
+  return <GoogleOAuthProvider clientId={GOOGLE_AUTH_CONFIG.clientId}>{children}</GoogleOAuthProvider>;
 };
 
 export default RootProviders;

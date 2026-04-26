@@ -13,12 +13,15 @@ const PhoneVerificationPage = () => {
   const location = useLocation();
   const inputRefs = useRef([]);
   const email = location.state?.email || '';
+  const nextDestination = location.state?.next || '/dashboard';
 
   const [step, setStep] = useState(1);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState(Array.from({ length: OTP_LENGTH }, () => ''));
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
+  const [deliveryState, setDeliveryState] = useState(null);
+  const [debugOtp, setDebugOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -41,6 +44,8 @@ const PhoneVerificationPage = () => {
     setIsLoading(true);
     setError('');
     setInfo('');
+    setDebugOtp('');
+    setDeliveryState(null);
 
     try {
       const { response, payload } = await apiFetch('auth/generate-otp/', {
@@ -56,7 +61,9 @@ const PhoneVerificationPage = () => {
       }
 
       setStep(2);
-      setInfo('Verification code sent successfully. Check your phone.');
+      setDeliveryState(payload.delivery || null);
+      setDebugOtp(payload.debug_otp || '');
+      setInfo(payload.message || 'Verification code generated successfully.');
       window.setTimeout(() => inputRefs.current[0]?.focus(), 120);
     } catch (err) {
       setError(err.message || 'Unable to send OTP.');
@@ -115,7 +122,7 @@ const PhoneVerificationPage = () => {
       storeAuthSession(payload);
       setStep(3);
       window.setTimeout(() => {
-        navigate('/dashboard');
+        navigate(nextDestination);
       }, 1400);
     } catch (err) {
       setError(err.message || 'Unable to verify OTP.');
@@ -168,7 +175,7 @@ const PhoneVerificationPage = () => {
 
                 <h2 className="mb-2 text-2xl font-bold">Secure your account</h2>
                 <p className="mb-8 leading-relaxed text-zinc-400">
-                  Verify your phone number so we can protect your account and unlock your student dashboard.
+                  Verify your WhatsApp number so we can protect your account and unlock your student dashboard.
                 </p>
 
                 {!email ? (
@@ -182,7 +189,7 @@ const PhoneVerificationPage = () => {
 
                 <form onSubmit={handleSendCode} className="space-y-6">
                   <div className="space-y-2">
-                    <label className="ml-1 text-sm font-medium text-zinc-400">Phone Number</label>
+                    <label className="ml-1 text-sm font-medium text-zinc-400">WhatsApp Number</label>
                     <div className="group relative">
                       <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 font-medium text-white">
                         +977
@@ -208,7 +215,7 @@ const PhoneVerificationPage = () => {
                       <div className="h-5 w-5 animate-spin rounded-full border-2 border-black/30 border-t-black" />
                     ) : (
                       <>
-                        Send Verification Code
+                        Send OTP to WhatsApp
                         <ArrowRight className="h-4 w-4" />
                       </>
                     )}
@@ -237,13 +244,41 @@ const PhoneVerificationPage = () => {
                   <ShieldCheck className="h-6 w-6" />
                 </div>
 
-                <h2 className="mb-2 text-2xl font-bold">Check your phone</h2>
+                <h2 className="mb-2 text-2xl font-bold">{deliveryState?.whatsapp_sent ? 'Check WhatsApp' : 'Use your backup code'}</h2>
                 <p className="mb-8 leading-relaxed text-zinc-400">
-                  We&apos;ve sent a 6-digit verification code to <span className="font-medium text-white">{fullPhoneNumber}</span>
+                  {deliveryState?.whatsapp_sent ? (
+                    <>
+                      We&apos;ve sent a 6-digit verification code to your WhatsApp on <span className="font-medium text-white">{fullPhoneNumber}</span>
+                    </>
+                  ) : (
+                    <>
+                      WhatsApp delivery was not available for this request. Use the fallback details below to complete verification.
+                    </>
+                  )}
                 </p>
 
                 {error ? <p className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">{error}</p> : null}
                 {info ? <p className="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-200">{info}</p> : null}
+
+                {!deliveryState?.whatsapp_sent && deliveryState ? (
+                  <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-100">
+                    <p className="font-medium text-amber-200">WhatsApp delivery is not active for this request.</p>
+                    {deliveryState.whatsapp_error ? (
+                      <p className="mt-2 text-amber-100/90">{deliveryState.whatsapp_error}</p>
+                    ) : null}
+                    <p className="mt-2 text-amber-100/90">
+                      {deliveryState.email_sent
+                        ? `We sent the OTP to your account email (${email}) as a fallback.`
+                        : 'Email fallback was not available, so use the development OTP below.'}
+                    </p>
+                    {debugOtp ? (
+                      <div className="mt-3 rounded-lg border border-white/10 bg-black/30 px-4 py-3">
+                        <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">Development OTP</p>
+                        <p className="mt-1 text-2xl font-bold tracking-[0.35em] text-white">{debugOtp}</p>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
 
                 <form onSubmit={handleVerify} className="space-y-8">
                   <div className="flex justify-between gap-2 sm:gap-4">
@@ -278,7 +313,7 @@ const PhoneVerificationPage = () => {
                   <p className="text-center text-sm text-zinc-500">
                     Didn&apos;t receive the code?{' '}
                     <button type="button" onClick={resendCode} className="font-medium text-white transition-colors hover:text-brand">
-                      Resend
+                      Resend on WhatsApp
                     </button>
                   </p>
                 </form>

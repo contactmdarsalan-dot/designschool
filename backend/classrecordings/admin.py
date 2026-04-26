@@ -3,9 +3,10 @@ from .models import ClassRecording
 
 @admin.register(ClassRecording)
 class ClassRecordingAdmin(admin.ModelAdmin):
-    list_display = ('title', 'course', 'uploaded_at', 'uploaded_by')
-    list_filter = ('course', 'uploaded_at')
-    search_fields = ('title', 'course__title')
+    list_display = ('title', 'course', 'video_provider', 'is_unlisted', 'uploaded_at', 'uploaded_by')
+    list_filter = ('course', 'video_provider', 'is_unlisted', 'uploaded_at')
+    search_fields = ('title', 'course__title', 'video_url', 'youtube_video_id')
+    readonly_fields = ('video_provider', 'youtube_video_id')
     ordering = ('-uploaded_at',)
 
     def save_model(self, request, obj, form, change):
