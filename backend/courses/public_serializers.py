@@ -353,6 +353,38 @@ class PublicCourseDetailSerializer(PublicCourseListSerializer):
                 'title': module.title,
                 'description': module.description,
                 'content': [point.text for point in module.points.all()],
+                'lessons': [
+                    {
+                        'id': lesson.id,
+                        'title': lesson.title,
+                        'slug': lesson.slug,
+                        'summary': lesson.summary,
+                        'type': lesson.lesson_type,
+                        'estimatedMinutes': lesson.estimated_minutes,
+                        'xpReward': lesson.xp_reward,
+                        'isPreview': lesson.is_preview,
+                        'blocks': [
+                            {
+                                'type': block.block_type,
+                                'title': block.title,
+                                'body': block.body,
+                                'mediaUrl': block.media_url,
+                                'metadata': block.metadata,
+                            }
+                            for block in lesson.content_blocks.all()
+                        ],
+                        'quiz': {
+                            'title': lesson.quiz.title,
+                            'passingScore': lesson.quiz.passing_score,
+                            'xpReward': lesson.quiz.xp_reward,
+                            'questionCount': lesson.quiz.questions.count(),
+                        }
+                        if hasattr(lesson, 'quiz')
+                        else None,
+                    }
+                    for lesson in module.lessons.all()
+                    if lesson.is_published
+                ],
             }
             for module in obj.modules.all()
         ]

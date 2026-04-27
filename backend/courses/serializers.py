@@ -17,6 +17,8 @@ from .models import (
     CourseTag,
     CourseTechnologyCategory,
     CourseTechnologyItem,
+    Lesson,
+    LessonContentBlock,
     Requirement,
     WhatYouWillLearn,
     WhoIsFor,
@@ -25,6 +27,7 @@ from .models import (
 
 class CategorySerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
+    icon_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
@@ -35,6 +38,8 @@ class CategorySerializer(serializers.ModelSerializer):
             'short_description',
             'image',
             'image_url',
+            'icon',
+            'icon_url',
             'badge',
             'icon_name',
             'show_on_home',
@@ -43,10 +48,16 @@ class CategorySerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'slug')
 
     def get_image_url(self, obj):
-        if not obj.image:
+        return self.build_file_url(obj.image)
+
+    def get_icon_url(self, obj):
+        return self.build_file_url(obj.icon)
+
+    def build_file_url(self, file_field):
+        if not file_field:
             return ''
         try:
-            url = obj.image.url
+            url = file_field.url
         except ValueError:
             return ''
         request = self.context.get('request')
@@ -89,12 +100,40 @@ class CourseModulePointSerializer(serializers.ModelSerializer):
         fields = ('id', 'text', 'sort_order')
 
 
+class LessonContentBlockSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LessonContentBlock
+        fields = ('id', 'block_type', 'title', 'body', 'media_url', 'metadata', 'sort_order')
+
+
+class LessonSerializer(serializers.ModelSerializer):
+    content_blocks = LessonContentBlockSerializer(many=True, required=False)
+
+    class Meta:
+        model = Lesson
+        fields = (
+            'id',
+            'title',
+            'slug',
+            'summary',
+            'lesson_type',
+            'estimated_minutes',
+            'xp_reward',
+            'is_preview',
+            'is_published',
+            'sort_order',
+            'content_blocks',
+        )
+        read_only_fields = ('id', 'slug')
+
+
 class CourseModuleSerializer(serializers.ModelSerializer):
     points = CourseModulePointSerializer(many=True, required=False)
+    lessons = LessonSerializer(many=True, required=False)
 
     class Meta:
         model = CourseModule
-        fields = ('id', 'title', 'description', 'sort_order', 'points')
+        fields = ('id', 'title', 'description', 'sort_order', 'points', 'lessons')
 
 
 class CourseComparisonPointSerializer(serializers.ModelSerializer):
@@ -208,6 +247,7 @@ class CourseSerializer(serializers.ModelSerializer):
         course.modules.all().delete()
         for module_index, module in enumerate(modules or []):
             points = module.pop('points', [])
+            lessons = module.pop('lessons', [])
             module_obj = CourseModule.objects.create(
                 course=course,
                 title=module['title'],
@@ -220,6 +260,29 @@ class CourseSerializer(serializers.ModelSerializer):
                     text=point['text'],
                     sort_order=point.get('sort_order', point_index),
                 )
+            for lesson_index, lesson in enumerate(lessons):
+                content_blocks = lesson.pop('content_blocks', [])
+                lesson_obj = Lesson.objects.create(
+                    module=module_obj,
+                    title=lesson['title'],
+                    summary=lesson.get('summary', ''),
+                    lesson_type=lesson.get('lesson_type', 'article'),
+                    estimated_minutes=lesson.get('estimated_minutes', 8),
+                    xp_reward=lesson.get('xp_reward', 10),
+                    is_preview=lesson.get('is_preview', False),
+                    is_published=lesson.get('is_published', True),
+                    sort_order=lesson.get('sort_order', lesson_index),
+                )
+                for block_index, block in enumerate(content_blocks):
+                    LessonContentBlock.objects.create(
+                        lesson=lesson_obj,
+                        block_type=block.get('block_type', 'text'),
+                        title=block.get('title', ''),
+                        body=block.get('body', ''),
+                        media_url=block.get('media_url', ''),
+                        metadata=block.get('metadata', {}),
+                        sort_order=block.get('sort_order', block_index),
+                    )
 
     def _replace_technology_categories(self, course, categories):
         course.technology_categories.all().delete()

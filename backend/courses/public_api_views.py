@@ -83,6 +83,8 @@ class PublicCourseDetailView(APIView):
                 'target_audience',
                 'faqs',
                 'modules__points',
+                'modules__lessons__content_blocks',
+                'modules__lessons__quiz__questions__options',
                 'comparison_points',
                 'technology_categories__items',
                 'builder_items',

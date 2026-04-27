@@ -65,11 +65,9 @@ IS_PRODUCTION = ENVIRONMENT == 'production'
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY:
-    SECRET_KEY = (
-        'django-insecure-render-fallback-key-change-me'
-        if IS_PRODUCTION
-        else 'django-insecure-default-key'
-    )
+    if IS_PRODUCTION:
+        raise ImproperlyConfigured('SECRET_KEY must be set when DJANGO_ENV=production')
+    SECRET_KEY = 'django-insecure-default-key'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = get_bool_env('DEBUG', default=not IS_PRODUCTION)
@@ -100,7 +98,7 @@ INSTALLED_APPS = [
     #my apps
     'core',
     'users',
-    'students',
+    'students.apps.StudentsConfig',
     'mentors',
     'courses',
     'enrollments',

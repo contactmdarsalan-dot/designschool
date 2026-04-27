@@ -2,7 +2,7 @@ from rest_framework import permissions, viewsets
 from rest_framework.exceptions import PermissionDenied
 from .models import Category, Course, CourseReview
 from .serializers import CategorySerializer, CourseSerializer, CourseReviewSerializer
-from enrollments.models import Enrollment
+from .services.enrollment_service import user_has_verified_enrollment
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -26,6 +26,8 @@ class CourseViewSet(viewsets.ModelViewSet):
             'tags',
             'faqs',
             'modules__points',
+            'modules__lessons__content_blocks',
+            'modules__lessons__quiz__questions__options',
             'comparison_points',
             'technology_categories__items',
             'builder_items',
@@ -60,12 +62,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         course = serializer.validated_data['course']
-        is_enrolled = Enrollment.objects.filter(
-            email__iexact=self.request.user.email,
-            course=course,
-            status='verified',
-        ).exists()
-        if not self.request.user.is_staff and not is_enrolled:
+        if not self.request.user.is_staff and not user_has_verified_enrollment(self.request.user, course):
             raise PermissionDenied('Only verified students can review this course.')
         serializer.save(student=self.request.user)
 

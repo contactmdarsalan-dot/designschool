@@ -14,9 +14,15 @@ from .models import (
     CourseTag,
     CourseTechnologyCategory,
     CourseTechnologyItem,
+    Lesson,
+    LessonContentBlock,
+    LessonProgress,
+    CourseProgress,
+    XPTransaction,
     Requirement,
     WhatYouWillLearn,
 )
+from .services.progress_service import mark_lesson_completed
 
 
 User = get_user_model()
@@ -126,6 +132,62 @@ class PublicCourseApiTests(APITestCase):
         self.assertEqual(
             [item['name'] for item in payload['technologySections'][0]['items']],
             ['React', 'JavaScript'],
+        )
+
+    def test_public_course_detail_includes_lesson_level_curriculum(self):
+        course = self.create_course(title='Interaction Design')
+        module = CourseModule.objects.create(course=course, title='Foundations', sort_order=0)
+        lesson = Lesson.objects.create(
+            module=module,
+            title='Visual Hierarchy',
+            summary='Learn how to guide attention.',
+            lesson_type='interactive',
+            estimated_minutes=12,
+            xp_reward=20,
+            sort_order=0,
+        )
+        LessonContentBlock.objects.create(
+            lesson=lesson,
+            block_type='task',
+            title='Audit a screen',
+            body='Find the primary action and explain why it works.',
+        )
+
+        response = self.client.get(reverse('public_courses_detail', args=[course.slug]))
+
+        self.assertEqual(response.status_code, 200)
+        module_payload = response.json()['data']['course']['curriculum'][0]
+        self.assertEqual(module_payload['lessons'][0]['title'], 'Visual Hierarchy')
+        self.assertEqual(module_payload['lessons'][0]['type'], 'interactive')
+        self.assertEqual(module_payload['lessons'][0]['xpReward'], 20)
+        self.assertEqual(module_payload['lessons'][0]['blocks'][0]['type'], 'task')
+
+    def test_mark_lesson_completed_awards_xp_and_updates_course_progress(self):
+        student = User.objects.create_user(
+            username='student1',
+            email='student@example.com',
+            password='Testpass123!',
+            role='student',
+        )
+        course = self.create_course(title='Gamified UX')
+        module = CourseModule.objects.create(course=course, title='Core', sort_order=0)
+        lesson = Lesson.objects.create(module=module, title='Complete Me', xp_reward=30)
+
+        course_progress = mark_lesson_completed(student, lesson)
+
+        self.assertEqual(course_progress.progress_percent, 100)
+        self.assertEqual(course_progress.completed_lessons, 1)
+        self.assertEqual(course_progress.total_lessons, 1)
+        self.assertTrue(LessonProgress.objects.filter(user=student, lesson=lesson, status='completed').exists())
+        self.assertTrue(CourseProgress.objects.filter(user=student, course=course, xp_earned=30).exists())
+        self.assertTrue(
+            XPTransaction.objects.filter(
+                user=student,
+                course=course,
+                lesson=lesson,
+                amount=30,
+                source='lesson_completed',
+            ).exists()
         )
 
     def test_public_course_detail_includes_platform_mentors_with_associated_mentor(self):

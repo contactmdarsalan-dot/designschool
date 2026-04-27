@@ -15,6 +15,12 @@ class Category(models.Model):
         blank=True,
         null=True,
     )
+    icon = models.ImageField(
+        upload_to='courses/category-icons/',
+        validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp', 'svg'])],
+        blank=True,
+        null=True,
+    )
     badge = models.CharField(max_length=60, blank=True)
     icon_name = models.CharField(max_length=80, blank=True, default='Brain')
     show_on_home = models.BooleanField(default=True)
@@ -206,6 +212,344 @@ class CourseModulePoint(models.Model):
 
     def __str__(self):
         return self.text
+
+
+class Lesson(models.Model):
+    LESSON_TYPE_CHOICES = [
+        ('article', 'Article'),
+        ('video', 'Video'),
+        ('interactive', 'Interactive'),
+        ('challenge', 'Challenge'),
+        ('quiz', 'Quiz'),
+    ]
+
+    module = models.ForeignKey(CourseModule, on_delete=models.CASCADE, related_name='lessons')
+    title = models.CharField(max_length=180)
+    slug = models.SlugField(max_length=220, blank=True)
+    summary = models.CharField(max_length=300, blank=True)
+    lesson_type = models.CharField(max_length=20, choices=LESSON_TYPE_CHOICES, default='article')
+    estimated_minutes = models.PositiveIntegerField(default=8)
+    xp_reward = models.PositiveIntegerField(default=10)
+    is_preview = models.BooleanField(default=False)
+    is_published = models.BooleanField(default=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ('sort_order', 'id')
+        constraints = [
+            models.UniqueConstraint(fields=('module', 'slug'), name='unique_lesson_slug_per_module'),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.title)
+            slug = base_slug
+            count = 1
+            while Lesson.objects.filter(module=self.module, slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{count}"
+                count += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'{self.module.title} - {self.title}'
+
+
+class LessonContentBlock(models.Model):
+    BLOCK_TYPE_CHOICES = [
+        ('text', 'Text'),
+        ('video', 'Video'),
+        ('image', 'Image'),
+        ('code', 'Code'),
+        ('callout', 'Callout'),
+        ('task', 'Task'),
+    ]
+
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='content_blocks')
+    block_type = models.CharField(max_length=20, choices=BLOCK_TYPE_CHOICES, default='text')
+    title = models.CharField(max_length=160, blank=True)
+    body = models.TextField(blank=True)
+    media_url = models.URLField(blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ('sort_order', 'id')
+
+    def __str__(self):
+        return self.title or f'{self.lesson.title} {self.block_type} block'
+
+
+class Quiz(models.Model):
+    lesson = models.OneToOneField(Lesson, on_delete=models.CASCADE, related_name='quiz')
+    title = models.CharField(max_length=180)
+    passing_score = models.PositiveSmallIntegerField(default=70, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    xp_reward = models.PositiveIntegerField(default=25)
+    max_attempts = models.PositiveIntegerField(default=3)
+    is_published = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name_plural = 'Quizzes'
+
+    def __str__(self):
+        return self.title
+
+
+class Question(models.Model):
+    QUESTION_TYPE_CHOICES = [
+        ('single_choice', 'Single choice'),
+        ('multiple_choice', 'Multiple choice'),
+        ('true_false', 'True / false'),
+    ]
+
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='questions')
+    prompt = models.TextField()
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPE_CHOICES, default='single_choice')
+    explanation = models.TextField(blank=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ('sort_order', 'id')
+
+    def __str__(self):
+        return self.prompt[:80]
+
+
+class Option(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='options')
+    text = models.CharField(max_length=500)
+    is_correct = models.BooleanField(default=False)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ('sort_order', 'id')
+
+    def __str__(self):
+        return self.text[:80]
+
+
+class QuizAttempt(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='quiz_attempts')
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='attempts')
+    score = models.PositiveSmallIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    passed = models.BooleanField(default=False)
+    answers = models.JSONField(default=dict, blank=True)
+    xp_awarded = models.PositiveIntegerField(default=0)
+    started_at = models.DateTimeField(default=timezone.now)
+    completed_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ('-started_at',)
+
+    def __str__(self):
+        return f'{self.user} - {self.quiz} - {self.score}%'
+
+
+class LessonProgress(models.Model):
+    STATUS_CHOICES = [
+        ('not_started', 'Not started'),
+        ('in_progress', 'In progress'),
+        ('completed', 'Completed'),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='lesson_progress')
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='progress_records')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='not_started')
+    progress_percent = models.PositiveSmallIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    started_at = models.DateTimeField(blank=True, null=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    last_seen_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'lesson')
+        ordering = ('lesson__module__sort_order', 'lesson__sort_order')
+
+    def __str__(self):
+        return f'{self.user} - {self.lesson} - {self.status}'
+
+
+class CourseProgress(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='course_progress')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='progress_records')
+    completed_lessons = models.PositiveIntegerField(default=0)
+    total_lessons = models.PositiveIntegerField(default=0)
+    progress_percent = models.PositiveSmallIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    xp_earned = models.PositiveIntegerField(default=0)
+    started_at = models.DateTimeField(default=timezone.now)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'course')
+        ordering = ('-updated_at',)
+
+    def __str__(self):
+        return f'{self.user} - {self.course} - {self.progress_percent}%'
+
+
+class XPTransaction(models.Model):
+    SOURCE_CHOICES = [
+        ('lesson_completed', 'Lesson completed'),
+        ('quiz_passed', 'Quiz passed'),
+        ('streak_bonus', 'Streak bonus'),
+        ('manual', 'Manual'),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='xp_transactions')
+    course = models.ForeignKey(Course, on_delete=models.SET_NULL, blank=True, null=True, related_name='xp_transactions')
+    lesson = models.ForeignKey(Lesson, on_delete=models.SET_NULL, blank=True, null=True, related_name='xp_transactions')
+    amount = models.PositiveIntegerField()
+    source = models.CharField(max_length=30, choices=SOURCE_CHOICES)
+    description = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-created_at',)
+
+    def __str__(self):
+        return f'{self.user} +{self.amount} XP'
+
+
+class Badge(models.Model):
+    name = models.CharField(max_length=120, unique=True)
+    slug = models.SlugField(max_length=140, unique=True, blank=True)
+    description = models.CharField(max_length=255, blank=True)
+    icon_name = models.CharField(max_length=80, blank=True, default='Award')
+    xp_threshold = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
+class UserBadge(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='badges')
+    badge = models.ForeignKey(Badge, on_delete=models.CASCADE, related_name='user_badges')
+    awarded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'badge')
+        ordering = ('-awarded_at',)
+
+    def __str__(self):
+        return f'{self.user} - {self.badge}'
+
+
+class DailyStreak(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='daily_streak')
+    current_count = models.PositiveIntegerField(default=0)
+    longest_count = models.PositiveIntegerField(default=0)
+    last_activity_date = models.DateField(blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.user} - {self.current_count} day streak'
+
+
+class Skill(models.Model):
+    name = models.CharField(max_length=120, unique=True)
+    slug = models.SlugField(max_length=140, unique=True, blank=True)
+    description = models.CharField(max_length=255, blank=True)
+    courses = models.ManyToManyField(Course, related_name='skills', blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
+class UserSkillProgress(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='skill_progress')
+    skill = models.ForeignKey(Skill, on_delete=models.CASCADE, related_name='user_progress')
+    level = models.PositiveIntegerField(default=1)
+    xp = models.PositiveIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'skill')
+
+    def __str__(self):
+        return f'{self.user} - {self.skill} L{self.level}'
+
+
+class LearningPath(models.Model):
+    title = models.CharField(max_length=180)
+    slug = models.SlugField(max_length=220, unique=True, blank=True)
+    description = models.TextField(blank=True)
+    is_published = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.title
+
+
+class LearningPathCourse(models.Model):
+    learning_path = models.ForeignKey(LearningPath, on_delete=models.CASCADE, related_name='path_courses')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='learning_path_items')
+    sort_order = models.PositiveIntegerField(default=0)
+    required = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('learning_path', 'course')
+        ordering = ('sort_order', 'id')
+
+    def __str__(self):
+        return f'{self.learning_path} - {self.course}'
+
+
+class UserLearningPathProgress(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='learning_path_progress')
+    learning_path = models.ForeignKey(LearningPath, on_delete=models.CASCADE, related_name='user_progress')
+    completed_courses = models.PositiveIntegerField(default=0)
+    total_courses = models.PositiveIntegerField(default=0)
+    progress_percent = models.PositiveSmallIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    started_at = models.DateTimeField(default=timezone.now)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'learning_path')
+
+    def __str__(self):
+        return f'{self.user} - {self.learning_path} - {self.progress_percent}%'
+
+
+class LearningEvent(models.Model):
+    EVENT_CHOICES = [
+        ('lesson_started', 'Lesson started'),
+        ('lesson_completed', 'Lesson completed'),
+        ('quiz_failed', 'Quiz failed'),
+        ('quiz_passed', 'Quiz passed'),
+        ('video_watched', 'Video watched'),
+        ('course_dropped', 'Course dropped'),
+        ('certificate_issued', 'Certificate issued'),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='learning_events')
+    course = models.ForeignKey(Course, on_delete=models.SET_NULL, blank=True, null=True, related_name='learning_events')
+    lesson = models.ForeignKey(Lesson, on_delete=models.SET_NULL, blank=True, null=True, related_name='learning_events')
+    event_type = models.CharField(max_length=30, choices=EVENT_CHOICES)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-created_at',)
+
+    def __str__(self):
+        return f'{self.user} - {self.event_type}'
 
 
 class CourseComparisonPoint(models.Model):
