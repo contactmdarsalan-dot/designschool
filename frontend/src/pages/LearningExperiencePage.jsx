@@ -3,6 +3,7 @@ import { ArrowLeft, Award, CheckCircle2, Clock3, FileText, Layers3, PlayCircle, 
 import { Link, useParams } from 'react-router-dom';
 import Navbar from '../components/sheryians/Navbar';
 import { apiFetch } from '../lib/api';
+import { isAuthenticated } from '../lib/auth';
 import { normalizeCourseDetail } from '../lib/courseContent';
 
 const flattenLessons = (course) => {
@@ -43,6 +44,22 @@ const LearningExperiencePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeLessonId, setActiveLessonId] = useState('');
   const [completedLessons, setCompletedLessons] = useState(() => new Set());
+  const [remoteProgress, setRemoteProgress] = useState(null);
+  const [isSavingProgress, setIsSavingProgress] = useState(false);
+  const [progressError, setProgressError] = useState('');
+
+  const applyProgressPayload = (payload) => {
+    const progress = payload?.data || payload;
+    const rows = progress?.lessons || [];
+    setRemoteProgress(progress?.progress || null);
+    setCompletedLessons(
+      new Set(
+        rows
+          .filter((row) => row.status === 'completed')
+          .map((row) => String(row.id)),
+      ),
+    );
+  };
 
   useEffect(() => {
     let isCancelled = false;
@@ -59,6 +76,15 @@ const LearningExperiencePage = () => {
           const lessons = flattenLessons(normalized);
           setCourse(normalized);
           setActiveLessonId(String(lessons[0]?.id || ''));
+
+          if (isAuthenticated()) {
+            const progressResult = await apiFetch(`courses/progress/${normalized.slug || normalized.identifier}/`, {
+              auth: true,
+            });
+            if (progressResult.response.ok) {
+              applyProgressPayload(progressResult.payload);
+            }
+          }
         }
       } catch {
         if (!isCancelled) {
@@ -81,20 +107,64 @@ const LearningExperiencePage = () => {
   const lessons = useMemo(() => flattenLessons(course), [course]);
   const activeLesson = lessons.find((lesson) => String(lesson.id) === String(activeLessonId)) || lessons[0] || null;
   const totalXp = lessons.reduce((sum, lesson) => sum + Number(lesson.xpReward || 0), 0);
-  const completedPercent = lessons.length ? Math.round((completedLessons.size / lessons.length) * 100) : 0;
+  const completedPercent = remoteProgress?.progressPercent ?? (lessons.length ? Math.round((completedLessons.size / lessons.length) * 100) : 0);
+  const earnedXp = remoteProgress?.xpEarned ?? Array.from(completedLessons).reduce((sum, lessonId) => {
+    const lesson = lessons.find((item) => String(item.id) === lessonId);
+    return sum + Number(lesson?.xpReward || 0);
+  }, 0);
 
-  const toggleComplete = () => {
+  useEffect(() => {
+    const startLesson = async () => {
+      if (!isAuthenticated() || !activeLesson?.id || Number.isNaN(Number(activeLesson.id))) {
+        return;
+      }
+
+      try {
+        await apiFetch(`courses/lessons/${activeLesson.id}/start/`, {
+          method: 'POST',
+          auth: true,
+        });
+      } catch {
+        // Starting progress is helpful but should not block reading the lesson.
+      }
+    };
+
+    startLesson();
+  }, [activeLesson?.id]);
+
+  const completeActiveLesson = async () => {
     if (!activeLesson) {
       return;
     }
+
+    const key = String(activeLesson.id);
+    if (completedLessons.has(key)) {
+      return;
+    }
+
+    if (isAuthenticated() && !Number.isNaN(Number(activeLesson.id))) {
+      setIsSavingProgress(true);
+      setProgressError('');
+      try {
+        const { response, payload } = await apiFetch(`courses/lessons/${activeLesson.id}/complete/`, {
+          method: 'POST',
+          auth: true,
+        });
+        if (!response.ok) {
+          throw new Error(payload?.message || 'Could not save progress.');
+        }
+        applyProgressPayload(payload);
+      } catch {
+        setProgressError('Progress could not be saved. Please try again.');
+      } finally {
+        setIsSavingProgress(false);
+      }
+      return;
+    }
+
     setCompletedLessons((current) => {
       const next = new Set(current);
-      const key = String(activeLesson.id);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
+      next.add(key);
       return next;
     });
   };
@@ -138,7 +208,9 @@ const LearningExperiencePage = () => {
           <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/[0.06]">
             <div className="h-full rounded-full bg-emerald-300" style={{ width: `${completedPercent}%` }} />
           </div>
-          <p className="mt-2 text-xs text-white/42">{completedPercent}% complete in this session</p>
+          <p className="mt-2 text-xs text-white/42">
+            {completedPercent}% complete{isAuthenticated() ? '' : ' in this session'}
+          </p>
 
           <div className="mt-7 space-y-6">
             {(course.curriculum || []).map((module, moduleIndex) => {
@@ -262,17 +334,28 @@ const LearningExperiencePage = () => {
           <div className="mt-5 rounded-3xl border border-white/10 bg-white/[0.025] p-5">
             <p className="text-sm text-white/48">Available XP</p>
             <p className="mt-2 text-4xl font-semibold">{totalXp}</p>
+            <p className="mt-1 text-sm text-emerald-200">{earnedXp} XP earned</p>
             <p className="mt-3 text-sm leading-6 text-white/48">
-              This page reads lesson and quiz structure from the backend. Persisted progress can be connected to the progress API next.
+              Lesson progress is saved to your account when you are signed in.
             </p>
           </div>
+          {progressError ? (
+            <p className="mt-3 rounded-2xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-100">
+              {progressError}
+            </p>
+          ) : null}
           <button
             type="button"
-            onClick={toggleComplete}
-            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-300 px-5 py-4 text-sm font-bold text-black transition hover:bg-emerald-200"
+            onClick={completeActiveLesson}
+            disabled={completedLessons.has(String(activeLesson.id)) || isSavingProgress}
+            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-300 px-5 py-4 text-sm font-bold text-black transition hover:bg-emerald-200 disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/45"
           >
             <CheckCircle2 size={18} />
-            {completedLessons.has(String(activeLesson.id)) ? 'Mark incomplete' : 'Mark complete'}
+            {completedLessons.has(String(activeLesson.id))
+              ? 'Completed'
+              : isSavingProgress
+                ? 'Saving...'
+                : 'Mark complete'}
           </button>
         </aside>
       </main>

@@ -206,6 +206,35 @@ class PublicCourseApiTests(APITestCase):
             ).exists()
         )
 
+    def test_lesson_complete_api_persists_progress_and_xp(self):
+        student = User.objects.create_user(
+            username='student2',
+            email='student2@example.com',
+            password='Testpass123!',
+            role='student',
+        )
+        course = self.create_course(title='Progress API UX')
+        module = CourseModule.objects.create(course=course, title='Core', sort_order=0)
+        lesson = Lesson.objects.create(module=module, title='API Complete Me', xp_reward=40)
+        self.client.force_authenticate(student)
+
+        response = self.client.post(reverse('lesson_complete', args=[lesson.id]))
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()['data']
+        self.assertEqual(payload['progress']['progressPercent'], 100)
+        self.assertEqual(payload['progress']['xpEarned'], 40)
+        self.assertEqual(payload['lessons'][0]['id'], lesson.id)
+        self.assertEqual(payload['lessons'][0]['status'], 'completed')
+        self.assertTrue(
+            XPTransaction.objects.filter(
+                user=student,
+                lesson=lesson,
+                amount=40,
+                source='lesson_completed',
+            ).exists()
+        )
+
     def test_public_course_detail_includes_platform_mentors_with_associated_mentor(self):
         course = self.create_course(title='UI UX Design')
 

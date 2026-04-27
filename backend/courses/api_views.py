@@ -1,8 +1,16 @@
-from rest_framework import permissions, viewsets
+import uuid
+
+from django.db.models import Q
+from django.shortcuts import get_object_or_404
+from rest_framework import permissions, status, viewsets
 from rest_framework.exceptions import PermissionDenied
-from .models import Category, Course, CourseReview
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .models import Category, Course, CourseReview, Lesson, LessonProgress
 from .serializers import CategorySerializer, CourseSerializer, CourseReviewSerializer
 from .services.enrollment_service import user_has_verified_enrollment
+from .services.progress_service import mark_lesson_completed, mark_lesson_started, recompute_course_progress
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -75,3 +83,77 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
         if not self.request.user.is_staff and instance.student_id != self.request.user.id:
             raise PermissionDenied('You can only delete your own review.')
         instance.delete()
+
+
+def serialize_course_progress(user, course):
+    course_progress = recompute_course_progress(user, course)
+    lesson_rows = LessonProgress.objects.filter(
+        user=user,
+        lesson__module__course=course,
+    ).select_related('lesson')
+
+    return {
+        'course': {
+            'id': str(course.id),
+            'slug': course.slug,
+            'title': course.title,
+        },
+        'progress': {
+            'completedLessons': course_progress.completed_lessons,
+            'totalLessons': course_progress.total_lessons,
+            'progressPercent': course_progress.progress_percent,
+            'xpEarned': course_progress.xp_earned,
+            'completedAt': course_progress.completed_at,
+        },
+        'lessons': [
+            {
+                'id': row.lesson_id,
+                'status': row.status,
+                'progressPercent': row.progress_percent,
+                'startedAt': row.started_at,
+                'completedAt': row.completed_at,
+            }
+            for row in lesson_rows
+        ],
+    }
+
+
+class CourseProgressView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, course_identifier):
+        query = Q(slug=course_identifier)
+        try:
+            uuid.UUID(str(course_identifier))
+            query |= Q(id=course_identifier)
+        except ValueError:
+            pass
+
+        course = get_object_or_404(Course.objects.filter(query), is_published=True)
+        return Response({'data': serialize_course_progress(request.user, course)})
+
+
+class LessonStartView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, lesson_id):
+        lesson = get_object_or_404(
+            Lesson.objects.select_related('module__course'),
+            id=lesson_id,
+            is_published=True,
+        )
+        mark_lesson_started(request.user, lesson)
+        return Response({'data': serialize_course_progress(request.user, lesson.module.course)})
+
+
+class LessonCompleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, lesson_id):
+        lesson = get_object_or_404(
+            Lesson.objects.select_related('module__course'),
+            id=lesson_id,
+            is_published=True,
+        )
+        mark_lesson_completed(request.user, lesson)
+        return Response({'data': serialize_course_progress(request.user, lesson.module.course)}, status=status.HTTP_200_OK)

@@ -57,6 +57,7 @@ export const normalizeCourseCard = (course) => {
 
   return {
     id: course?._id || course?.id || course?.slug,
+    slug: course?.slug || '',
     identifier: getCourseIdentifier(course),
     href: getCourseHref(course),
     title: course?.title || 'Untitled Course',

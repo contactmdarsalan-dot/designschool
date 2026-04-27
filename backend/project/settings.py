@@ -40,7 +40,9 @@ def get_list_env(name, default=''):
 
 
 def get_sqlite_database(default_name='db.sqlite3'):
-    sqlite_name = os.path.expandvars(os.path.expanduser(os.environ.get('SQLITE_NAME', default_name)))
+    sqlite_name = os.path.expandvars(
+        os.path.expanduser(os.environ.get('SQLITE_NAME', default_name))
+    )
     sqlite_path = Path(sqlite_name)
     if not sqlite_path.is_absolute():
         sqlite_path = BASE_DIR / sqlite_path
@@ -92,10 +94,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'drf_spectacular',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
-    #my apps
+    # Project apps
     'core',
     'users',
     'students.apps.StudentsConfig',
@@ -121,10 +124,21 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Design School API',
+    'DESCRIPTION': 'Versioned API for courses, enrollments, learning progress, and platform content.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
 
 SITE_URL = os.environ.get('SITE_URL', 'http://127.0.0.1:8000')
-FRONTEND_SITE_URL = os.environ.get('FRONTEND_SITE_URL', 'https://designschool-beta.vercel.app' if IS_PRODUCTION else 'http://127.0.0.1:5173')
+FRONTEND_SITE_URL = os.environ.get(
+    'FRONTEND_SITE_URL',
+    'https://designschool-beta.vercel.app' if IS_PRODUCTION else 'http://127.0.0.1:5173',
+)
 
 DEFAULT_FRONTEND_ORIGINS = ','.join(
     origin
@@ -191,13 +205,13 @@ CKEDITOR_CONFIGS = {
             ['Link', 'Unlink', 'Image', 'Table', 'CodeSnippet'],
             ['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'],
             ['Undo', 'Redo'],
-            ['RemoveFormat', 'Source']
+            ['RemoveFormat', 'Source'],
         ],
         'extraPlugins': ','.join([
             'uploadimage',  # enable image upload
             'codesnippet',  # syntax highlight
-            'justify',      # alignment
-            'autolink',     # automatic link detection
+            'justify',  # alignment
+            'autolink',  # automatic link detection
         ]),
     }
 }
@@ -217,7 +231,10 @@ if IS_PRODUCTION:
     SESSION_COOKIE_SECURE = get_bool_env('SESSION_COOKIE_SECURE', default=True)
     CSRF_COOKIE_SECURE = get_bool_env('CSRF_COOKIE_SECURE', default=True)
     SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '31536000'))
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = get_bool_env('SECURE_HSTS_INCLUDE_SUBDOMAINS', default=True)
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = get_bool_env(
+        'SECURE_HSTS_INCLUDE_SUBDOMAINS',
+        default=True,
+    )
     SECURE_HSTS_PRELOAD = get_bool_env('SECURE_HSTS_PRELOAD', default=True)
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
@@ -266,10 +283,36 @@ if IS_PRODUCTION:
             }
         }
     else:
-        fallback_sqlite = '/tmp/eduflow-lms/db.sqlite3' if os.name != 'nt' else 'db.sqlite3'
-        DATABASES = get_sqlite_database(default_name=fallback_sqlite)
+        raise ImproperlyConfigured(
+            'Production requires DATABASE_URL or POSTGRES_DB, POSTGRES_USER, and POSTGRES_PASSWORD.'
+        )
 else:
     DATABASES = get_sqlite_database()
+
+
+REDIS_URL = os.environ.get('REDIS_URL', '')
+
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'design-school-local-cache',
+        }
+    }
+
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', REDIS_URL or 'memory://')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', REDIS_URL or 'cache+memory://')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
 
 
 # Password validation
