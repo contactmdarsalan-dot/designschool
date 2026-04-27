@@ -14,9 +14,14 @@ from .models import (
     CourseTag,
     CourseTechnologyCategory,
     CourseTechnologyItem,
+    DailyStreak,
     Lesson,
     LessonContentBlock,
     LessonProgress,
+    Option,
+    Question,
+    Quiz,
+    QuizAttempt,
     CourseProgress,
     XPTransaction,
     Requirement,
@@ -234,6 +239,85 @@ class PublicCourseApiTests(APITestCase):
                 source='lesson_completed',
             ).exists()
         )
+
+    def test_quiz_attempt_api_grades_answers_and_awards_xp_once(self):
+        student = User.objects.create_user(
+            username='quizstudent',
+            email='quizstudent@example.com',
+            password='Testpass123!',
+            role='student',
+        )
+        course = self.create_course(title='Quiz Driven UX')
+        module = CourseModule.objects.create(course=course, title='Core', sort_order=0)
+        lesson = Lesson.objects.create(module=module, title='Quiz Lesson', xp_reward=15)
+        quiz = Quiz.objects.create(lesson=lesson, title='Hierarchy Check', passing_score=70, xp_reward=25)
+        question = Question.objects.create(quiz=quiz, prompt='What creates stronger hierarchy?')
+        correct_option = Option.objects.create(question=question, text='Clear contrast', is_correct=True)
+        Option.objects.create(question=question, text='Random spacing', is_correct=False)
+        self.client.force_authenticate(student)
+
+        response = self.client.post(
+            reverse('quiz_attempt_submit', args=[quiz.id]),
+            {'answers': {str(question.id): [correct_option.id]}},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        payload = response.json()['data']
+        self.assertTrue(payload['attempt']['passed'])
+        self.assertEqual(payload['attempt']['score'], 100)
+        self.assertEqual(payload['attempt']['xpAwarded'], 25)
+        self.assertEqual(payload['progress']['progress']['progressPercent'], 100)
+        self.assertTrue(QuizAttempt.objects.filter(user=student, quiz=quiz, passed=True, score=100).exists())
+        self.assertTrue(LessonProgress.objects.filter(user=student, lesson=lesson, status='completed').exists())
+        self.assertTrue(DailyStreak.objects.filter(user=student, current_count=1).exists())
+        self.assertTrue(
+            XPTransaction.objects.filter(
+                user=student,
+                lesson=lesson,
+                amount=25,
+                source='quiz_passed',
+            ).exists()
+        )
+
+        second_response = self.client.post(
+            reverse('quiz_attempt_submit', args=[quiz.id]),
+            {'answers': {str(question.id): [correct_option.id]}},
+            format='json',
+        )
+
+        self.assertEqual(second_response.status_code, 201)
+        self.assertEqual(second_response.json()['data']['attempt']['xpAwarded'], 0)
+        self.assertEqual(XPTransaction.objects.filter(user=student, lesson=lesson, source='quiz_passed').count(), 1)
+
+    def test_quiz_attempt_api_records_failed_attempt_without_xp(self):
+        student = User.objects.create_user(
+            username='quizfail',
+            email='quizfail@example.com',
+            password='Testpass123!',
+            role='student',
+        )
+        course = self.create_course(title='Quiz Failure UX')
+        module = CourseModule.objects.create(course=course, title='Core', sort_order=0)
+        lesson = Lesson.objects.create(module=module, title='Quiz Lesson', xp_reward=15)
+        quiz = Quiz.objects.create(lesson=lesson, title='Hierarchy Check', passing_score=70, xp_reward=25)
+        question = Question.objects.create(quiz=quiz, prompt='What creates stronger hierarchy?')
+        Option.objects.create(question=question, text='Clear contrast', is_correct=True)
+        wrong_option = Option.objects.create(question=question, text='Random spacing', is_correct=False)
+        self.client.force_authenticate(student)
+
+        response = self.client.post(
+            reverse('quiz_attempt_submit', args=[quiz.id]),
+            {'answers': {str(question.id): [wrong_option.id]}},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        payload = response.json()['data']
+        self.assertFalse(payload['attempt']['passed'])
+        self.assertEqual(payload['attempt']['score'], 0)
+        self.assertEqual(payload['attempt']['xpAwarded'], 0)
+        self.assertFalse(XPTransaction.objects.filter(user=student, lesson=lesson, source='quiz_passed').exists())
 
     def test_public_course_detail_includes_platform_mentors_with_associated_mentor(self):
         course = self.create_course(title='UI UX Design')

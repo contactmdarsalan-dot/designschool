@@ -7,10 +7,11 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Category, Course, CourseReview, Lesson, LessonProgress
+from .models import Category, Course, CourseReview, Lesson, LessonProgress, Quiz
 from .serializers import CategorySerializer, CourseSerializer, CourseReviewSerializer
 from .services.enrollment_service import user_has_verified_enrollment
 from .services.progress_service import mark_lesson_completed, mark_lesson_started, recompute_course_progress
+from .services.quiz_service import submit_quiz_attempt
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -157,3 +158,35 @@ class LessonCompleteView(APIView):
         )
         mark_lesson_completed(request.user, lesson)
         return Response({'data': serialize_course_progress(request.user, lesson.module.course)}, status=status.HTTP_200_OK)
+
+
+class QuizAttemptSubmitView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, quiz_id):
+        quiz = get_object_or_404(
+            Quiz.objects.select_related('lesson__module__course').prefetch_related('questions__options'),
+            id=quiz_id,
+            is_published=True,
+            lesson__is_published=True,
+        )
+        result = submit_quiz_attempt(request.user, quiz, request.data.get('answers', {}))
+        attempt = result['attempt']
+
+        return Response(
+            {
+                'data': {
+                    'attempt': {
+                        'id': attempt.id,
+                        'score': attempt.score,
+                        'passed': attempt.passed,
+                        'xpAwarded': attempt.xp_awarded,
+                        'correctCount': result['correct_count'],
+                        'totalQuestions': result['total_questions'],
+                        'alreadyPassed': result['already_passed'],
+                    },
+                    'progress': serialize_course_progress(request.user, result['course']),
+                }
+            },
+            status=status.HTTP_201_CREATED,
+        )

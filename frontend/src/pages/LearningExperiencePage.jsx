@@ -47,6 +47,9 @@ const LearningExperiencePage = () => {
   const [remoteProgress, setRemoteProgress] = useState(null);
   const [isSavingProgress, setIsSavingProgress] = useState(false);
   const [progressError, setProgressError] = useState('');
+  const [quizAnswers, setQuizAnswers] = useState({});
+  const [quizResult, setQuizResult] = useState(null);
+  const [isSubmittingQuiz, setIsSubmittingQuiz] = useState(false);
 
   const applyProgressPayload = (payload) => {
     const progress = payload?.data || payload;
@@ -131,6 +134,64 @@ const LearningExperiencePage = () => {
 
     startLesson();
   }, [activeLesson?.id]);
+
+  useEffect(() => {
+    setQuizAnswers({});
+    setQuizResult(null);
+    setProgressError('');
+  }, [activeLesson?.id]);
+
+  const updateQuizAnswer = (question, optionId) => {
+    const questionId = String(question.id);
+    const optionKey = String(optionId);
+    setQuizAnswers((current) => {
+      const existing = current[questionId] || [];
+      if (question.type === 'multiple_choice') {
+        return {
+          ...current,
+          [questionId]: existing.includes(optionKey)
+            ? existing.filter((item) => item !== optionKey)
+            : [...existing, optionKey],
+        };
+      }
+      return {
+        ...current,
+        [questionId]: [optionKey],
+      };
+    });
+  };
+
+  const submitActiveQuiz = async () => {
+    if (!activeLesson?.quiz?.id) {
+      return;
+    }
+
+    if (!isAuthenticated()) {
+      setProgressError('Sign in to submit quizzes and save XP.');
+      return;
+    }
+
+    setIsSubmittingQuiz(true);
+    setProgressError('');
+    try {
+      const { response, payload } = await apiFetch(`courses/quizzes/${activeLesson.quiz.id}/attempts/`, {
+        method: 'POST',
+        auth: true,
+        body: { answers: quizAnswers },
+      });
+      if (!response.ok) {
+        throw new Error(payload?.message || 'Could not submit quiz.');
+      }
+      setQuizResult(payload?.data?.attempt || null);
+      if (payload?.data?.progress) {
+        applyProgressPayload(payload.data.progress);
+      }
+    } catch {
+      setProgressError('Quiz could not be submitted. Please try again.');
+    } finally {
+      setIsSubmittingQuiz(false);
+    }
+  };
 
   const completeActiveLesson = async () => {
     if (!activeLesson) {
@@ -323,6 +384,53 @@ const LearningExperiencePage = () => {
                   <p className="mt-3 text-white/58">
                     Passing score: {activeLesson.quiz.passingScore}% / {activeLesson.quiz.questionCount} question{activeLesson.quiz.questionCount === 1 ? '' : 's'} / {activeLesson.quiz.xpReward} XP.
                   </p>
+                  <div className="mt-6 space-y-5">
+                    {(activeLesson.quiz.questions || []).map((question, questionIndex) => (
+                      <div key={question.id} className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/35">
+                          Question {questionIndex + 1}
+                        </p>
+                        <h4 className="mt-2 text-lg font-semibold">{question.prompt}</h4>
+                        <div className="mt-4 grid gap-2">
+                          {(question.options || []).map((option) => {
+                            const selected = (quizAnswers[String(question.id)] || []).includes(String(option.id));
+                            return (
+                              <button
+                                key={option.id}
+                                type="button"
+                                onClick={() => updateQuizAnswer(question, option.id)}
+                                className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${
+                                  selected
+                                    ? 'border-emerald-300 bg-emerald-300/15 text-white'
+                                    : 'border-white/10 bg-white/[0.03] text-white/65 hover:border-white/25'
+                                }`}
+                              >
+                                {option.text}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {quizResult ? (
+                    <div className={`mt-5 rounded-2xl border px-4 py-3 text-sm ${
+                      quizResult.passed
+                        ? 'border-emerald-300/25 bg-emerald-300/10 text-emerald-50'
+                        : 'border-red-300/25 bg-red-400/10 text-red-50'
+                    }`}>
+                      {quizResult.passed ? 'Passed' : 'Try again'} with {quizResult.score}%.
+                      {quizResult.xpAwarded ? ` +${quizResult.xpAwarded} XP awarded.` : ''}
+                    </div>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={submitActiveQuiz}
+                    disabled={isSubmittingQuiz || (activeLesson.quiz.questions || []).length === 0}
+                    className="mt-5 inline-flex rounded-2xl bg-white px-5 py-3 text-sm font-bold text-black transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:bg-white/25 disabled:text-white/45"
+                  >
+                    {isSubmittingQuiz ? 'Submitting...' : 'Submit quiz'}
+                  </button>
                 </article>
               ) : null}
             </div>

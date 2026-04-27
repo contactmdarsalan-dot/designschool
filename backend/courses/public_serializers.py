@@ -384,10 +384,26 @@ class PublicCourseDetailSerializer(PublicCourseListSerializer):
                             for block in lesson.content_blocks.all()
                         ],
                         'quiz': {
+                            'id': lesson.quiz.id,
                             'title': lesson.quiz.title,
                             'passingScore': lesson.quiz.passing_score,
                             'xpReward': lesson.quiz.xp_reward,
                             'questionCount': lesson.quiz.questions.count(),
+                            'questions': [
+                                {
+                                    'id': question.id,
+                                    'prompt': question.prompt,
+                                    'type': question.question_type,
+                                    'options': [
+                                        {
+                                            'id': option.id,
+                                            'text': option.text,
+                                        }
+                                        for option in question.options.all()
+                                    ],
+                                }
+                                for question in lesson.quiz.questions.all()
+                            ],
                         }
                         if hasattr(lesson, 'quiz')
                         else None,
