@@ -164,6 +164,68 @@ class WhoIsFor(models.Model):
         return self.text
 
 
+class CourseDetailFact(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='detail_facts')
+    label = models.CharField(max_length=90)
+    value = models.CharField(max_length=140)
+    description = models.CharField(max_length=240, blank=True)
+    icon_name = models.CharField(max_length=80, blank=True, default='CircleCheck')
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ('sort_order', 'id')
+
+    def __str__(self):
+        return f'{self.course.title} - {self.label}'
+
+
+class CourseSkillOutcome(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='skill_outcomes')
+    title = models.CharField(max_length=140)
+    description = models.TextField(max_length=700, blank=True)
+    icon_name = models.CharField(max_length=80, blank=True, default='Sparkles')
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ('sort_order', 'id')
+
+    def __str__(self):
+        return self.title
+
+
+class CourseTopic(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='topics')
+    name = models.CharField(max_length=120)
+    slug = models.SlugField(max_length=140, blank=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ('sort_order', 'id')
+        unique_together = ('course', 'name')
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
+class CourseAudienceItem(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='audience_items')
+    title = models.CharField(max_length=140)
+    description = models.TextField(max_length=600, blank=True)
+    icon_name = models.CharField(max_length=80, blank=True, default='Users')
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ('sort_order', 'id')
+
+    def __str__(self):
+        return self.title
+
+
 class CourseTag(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='tags')
     text = models.CharField(max_length=80)

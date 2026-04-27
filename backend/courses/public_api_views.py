@@ -89,6 +89,11 @@ class PublicCourseDetailView(APIView):
                 'learning_points',
                 'requirements',
                 'target_audience',
+                'detail_facts',
+                'skill_outcomes',
+                'topics',
+                'audience_items',
+                'skills',
                 'faqs',
                 'modules__points',
                 'modules__lessons__content_blocks',
@@ -98,6 +103,7 @@ class PublicCourseDetailView(APIView):
                 'builder_items',
                 'certificate_points',
                 'mentor_spotlights',
+                'reviews__student',
             )
             .filter(query)
             .first()

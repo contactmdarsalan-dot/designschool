@@ -124,6 +124,36 @@ export const normalizeCourseDetail = (course) => {
   const technologySections = Array.isArray(course?.technologySections) ? course.technologySections : [];
   const builderItems = Array.isArray(course?.builderItems) ? course.builderItems : [];
   const certificatePoints = Array.isArray(course?.certificatePoints) ? course.certificatePoints : [];
+  const detailFacts = Array.isArray(course?.detailFacts)
+    ? course.detailFacts
+    : Array.isArray(course?.metaData?.detailFacts)
+      ? course.metaData.detailFacts
+      : [];
+  const courseIncludes = Array.isArray(course?.courseIncludes)
+    ? course.courseIncludes
+    : Array.isArray(course?.metaData?.courseIncludes)
+      ? course.metaData.courseIncludes
+      : [];
+  const skillOutcomes = Array.isArray(course?.skillOutcomes)
+    ? course.skillOutcomes
+    : Array.isArray(course?.metaData?.skillOutcomes)
+      ? course.metaData.skillOutcomes
+      : [];
+  const topics = Array.isArray(course?.topics)
+    ? course.topics
+    : Array.isArray(course?.metaData?.topics)
+      ? course.metaData.topics
+      : [];
+  const audienceCards = Array.isArray(course?.audienceCards)
+    ? course.audienceCards
+    : Array.isArray(course?.metaData?.audienceCards)
+      ? course.metaData.audienceCards
+      : [];
+  const syllabusSummary = course?.syllabusSummary || course?.metaData?.syllabusSummary || {};
+  const reviewsSummary = course?.reviewsSummary || course?.metaData?.reviewsSummary || {};
+  const relatedCourses = Array.isArray(course?.relatedCourses)
+    ? course.relatedCourses.map((item) => normalizeCourseCard(item))
+    : [];
   const mentorSpotlights = Array.isArray(course?.mentorSpotlights)
     ? course.mentorSpotlights.map((mentor, index) => normalizeMentor(mentor, index))
     : [];
@@ -147,6 +177,18 @@ export const normalizeCourseDetail = (course) => {
       ? course.heroHighlights
       : fallbackHeroHighlights(course),
     heroBullets,
+    detailFacts,
+    courseIncludes,
+    skillOutcomes,
+    topics,
+    audienceCards,
+    syllabusSummary,
+    reviewsSummary: {
+      average: Number(reviewsSummary?.average ?? course?.ratingAvg ?? 0),
+      count: Number(reviewsSummary?.count ?? course?.ratingCount ?? 0),
+      items: Array.isArray(reviewsSummary?.items) ? reviewsSummary.items : [],
+    },
+    relatedCourses,
     requirements,
     targetAudience: Array.isArray(course?.targetAudience) ? course.targetAudience : [],
     curriculum,

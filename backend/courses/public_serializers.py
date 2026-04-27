@@ -278,6 +278,14 @@ class PublicCourseDetailSerializer(PublicCourseListSerializer):
     syllabusUrl = serializers.CharField(source='syllabus_url')
     heroHighlights = serializers.SerializerMethodField()
     heroBullets = serializers.SerializerMethodField()
+    detailFacts = serializers.SerializerMethodField()
+    courseIncludes = serializers.SerializerMethodField()
+    skillOutcomes = serializers.SerializerMethodField()
+    topics = serializers.SerializerMethodField()
+    audienceCards = serializers.SerializerMethodField()
+    syllabusSummary = serializers.SerializerMethodField()
+    reviewsSummary = serializers.SerializerMethodField()
+    relatedCourses = serializers.SerializerMethodField()
     requirements = serializers.SerializerMethodField()
     targetAudience = serializers.SerializerMethodField()
     curriculum = serializers.SerializerMethodField()
@@ -301,6 +309,14 @@ class PublicCourseDetailSerializer(PublicCourseListSerializer):
             'syllabusUrl',
             'heroHighlights',
             'heroBullets',
+            'detailFacts',
+            'courseIncludes',
+            'skillOutcomes',
+            'topics',
+            'audienceCards',
+            'syllabusSummary',
+            'reviewsSummary',
+            'relatedCourses',
             'requirements',
             'targetAudience',
             'curriculum',
@@ -357,6 +373,229 @@ class PublicCourseDetailSerializer(PublicCourseListSerializer):
 
     def get_heroBullets(self, obj):
         return [point.text for point in obj.learning_points.all()]
+
+    def get_syllabus_stats(self, obj):
+        modules = list(obj.modules.all())
+        lessons = [
+            lesson
+            for module in modules
+            for lesson in module.lessons.all()
+            if lesson.is_published
+        ]
+        quizzes = [lesson.quiz for lesson in lessons if hasattr(lesson, 'quiz')]
+        question_count = sum(quiz.questions.count() for quiz in quizzes)
+        total_minutes = sum(lesson.estimated_minutes or 0 for lesson in lessons)
+        total_xp = sum(lesson.xp_reward or 0 for lesson in lessons) + sum(quiz.xp_reward or 0 for quiz in quizzes)
+        total_hours = obj.total_hours or (round(total_minutes / 60) if total_minutes else 0)
+
+        return {
+            'moduleCount': len(modules),
+            'lessonCount': len(lessons),
+            'quizCount': len(quizzes),
+            'questionCount': question_count,
+            'totalMinutes': total_minutes,
+            'totalHours': total_hours,
+            'totalXp': total_xp,
+            'certificateAvailable': obj.certificate_available,
+        }
+
+    def get_detailFacts(self, obj):
+        facts = [
+            {
+                'label': fact.label,
+                'value': fact.value,
+                'description': fact.description,
+                'iconName': fact.icon_name,
+            }
+            for fact in obj.detail_facts.all()
+        ]
+        if facts:
+            return facts
+
+        stats = self.get_syllabus_stats(obj)
+        mentor = self.get_mentor(obj)
+        duration = obj.total_hours or stats['totalHours'] or 0
+        duration_value = f'{duration} hours' if duration else f'{obj.duration_weeks} weeks'
+        return [
+            {
+                'label': 'Instructor',
+                'value': mentor.get('name') or 'Design School Mentor',
+                'description': mentor.get('role') or 'Course mentor',
+                'iconName': 'UserRound',
+            },
+            {
+                'label': 'Skill level',
+                'value': obj.get_level_display(),
+                'description': 'Built for the listed learner level',
+                'iconName': 'BarChart3',
+            },
+            {
+                'label': 'Time to complete',
+                'value': duration_value,
+                'description': f'{obj.duration_weeks} week guided program',
+                'iconName': 'Clock3',
+            },
+            {
+                'label': 'Learning format',
+                'value': 'Gamified and interactive',
+                'description': 'Lessons, tasks, quizzes, XP, and progress',
+                'iconName': 'Sparkles',
+            },
+            {
+                'label': 'Course structure',
+                'value': f"{stats['lessonCount']} lessons, {stats['moduleCount']} levels",
+                'description': f"{stats['quizCount']} level tests included",
+                'iconName': 'ListChecks',
+            },
+            {
+                'label': 'Certificate',
+                'value': 'Course certificate' if obj.certificate_available else 'Not included',
+                'description': 'Shareable proof of completion',
+                'iconName': 'Award',
+            },
+            {
+                'label': 'Language',
+                'value': obj.get_language_display(),
+                'description': 'Course delivery language',
+                'iconName': 'Languages',
+            },
+            {
+                'label': 'Last updated',
+                'value': obj.updated_at.strftime('%b %d, %Y') if obj.updated_at else '',
+                'description': 'Content freshness marker',
+                'iconName': 'RefreshCw',
+            },
+        ]
+
+    def get_courseIncludes(self, obj):
+        stats = self.get_syllabus_stats(obj)
+        return [
+            {
+                'label': 'Interactive lessons',
+                'value': stats['lessonCount'],
+                'description': 'Bite-sized lesson flow',
+                'iconName': 'BookOpen',
+            },
+            {
+                'label': 'Level tests',
+                'value': stats['quizCount'],
+                'description': 'Quiz checkpoints',
+                'iconName': 'ClipboardCheck',
+            },
+            {
+                'label': 'Practice questions',
+                'value': stats['questionCount'],
+                'description': 'Feedback and recall prompts',
+                'iconName': 'MessagesSquare',
+            },
+            {
+                'label': 'XP available',
+                'value': stats['totalXp'],
+                'description': 'Gamified learning rewards',
+                'iconName': 'Trophy',
+            },
+        ]
+
+    def get_skillOutcomes(self, obj):
+        outcomes = [
+            {
+                'title': item.title,
+                'description': item.description,
+                'iconName': item.icon_name,
+            }
+            for item in obj.skill_outcomes.all()
+        ]
+        if outcomes:
+            return outcomes
+
+        learning_points = [point.text for point in obj.learning_points.all()]
+        return [
+            {
+                'title': point.split(':', 1)[0][:80],
+                'description': point,
+                'iconName': 'Sparkles',
+            }
+            for point in learning_points[:6]
+        ]
+
+    def get_topics(self, obj):
+        explicit_topics = [
+            {
+                'name': topic.name,
+                'slug': topic.slug,
+            }
+            for topic in obj.topics.all()
+        ]
+        if explicit_topics:
+            return explicit_topics
+
+        topic_names = []
+        for tag in obj.tags.all():
+            topic_names.append(tag.text)
+        for skill in obj.skills.all():
+            topic_names.append(skill.name)
+        for section in self.get_technologySections(obj):
+            topic_names.extend(item['name'] for item in section['items'])
+
+        seen = set()
+        topics = []
+        for name in topic_names:
+            normalized = (name or '').strip()
+            key = normalized.lower()
+            if normalized and key not in seen:
+                seen.add(key)
+                topics.append({'name': normalized, 'slug': key.replace(' ', '-')})
+        return topics[:14]
+
+    def get_audienceCards(self, obj):
+        cards = [
+            {
+                'title': item.title,
+                'description': item.description,
+                'iconName': item.icon_name,
+            }
+            for item in obj.audience_items.all()
+        ]
+        if cards:
+            return cards
+
+        return [
+            {
+                'title': item.text,
+                'description': 'Use this course to build confidence, portfolio depth, and a stronger learning habit.',
+                'iconName': 'Users',
+            }
+            for item in obj.target_audience.all()
+        ]
+
+    def get_syllabusSummary(self, obj):
+        return self.get_syllabus_stats(obj)
+
+    def get_reviewsSummary(self, obj):
+        reviews = list(obj.reviews.all())
+        return {
+            'average': self.get_ratingAvg(obj),
+            'count': obj.rating_count or len(reviews),
+            'items': [
+                {
+                    'id': review.id,
+                    'rating': review.rating,
+                    'comment': review.comment,
+                    'studentName': mentor_display_name(review.student),
+                    'createdAt': review.created_at,
+                }
+                for review in reviews[:8]
+                if review.comment
+            ],
+        }
+
+    def get_relatedCourses(self, obj):
+        queryset = Course.objects.filter(is_published=True).exclude(id=obj.id).select_related('category').prefetch_related('tags')
+        if obj.category_id:
+            queryset = queryset.filter(category_id=obj.category_id)
+        queryset = queryset.order_by('-is_featured', 'featured_order', '-created_at')[:4]
+        serializer = PublicCourseListSerializer(queryset, many=True, context=self.context)
+        return serializer.data
 
     def get_requirements(self, obj):
         return [req.text for req in obj.requirements.all()]
@@ -551,6 +790,13 @@ class PublicCourseDetailSerializer(PublicCourseListSerializer):
                 'techStack': [item['name'] for section in technology_sections for item in section['items']],
                 'outcomes': self.get_heroBullets(obj),
                 'certificate': obj.certificate_available,
+                'detailFacts': self.get_detailFacts(obj),
+                'courseIncludes': self.get_courseIncludes(obj),
+                'skillOutcomes': self.get_skillOutcomes(obj),
+                'topics': self.get_topics(obj),
+                'audienceCards': self.get_audienceCards(obj),
+                'syllabusSummary': self.get_syllabusSummary(obj),
+                'reviewsSummary': self.get_reviewsSummary(obj),
             }
         )
         return base

@@ -3,17 +3,21 @@ from django.contrib import admin
 from .models import (
     Category,
     Course,
+    CourseAudienceItem,
     CourseBuilderItem,
     CourseCertificatePoint,
     CourseComparisonPoint,
+    CourseDetailFact,
     CourseFAQ,
     CourseMentorSpotlight,
     CourseModule,
     CourseModulePoint,
     CourseReview,
+    CourseSkillOutcome,
     CourseTag,
     CourseTechnologyCategory,
     CourseTechnologyItem,
+    CourseTopic,
     DailyStreak,
     LearningEvent,
     LearningPath,
@@ -50,6 +54,26 @@ class RequirementInline(admin.TabularInline):
 
 class WhoIsForInline(admin.TabularInline):
     model = WhoIsFor
+    extra = 1
+
+
+class CourseDetailFactInline(admin.TabularInline):
+    model = CourseDetailFact
+    extra = 1
+
+
+class CourseSkillOutcomeInline(admin.StackedInline):
+    model = CourseSkillOutcome
+    extra = 1
+
+
+class CourseTopicInline(admin.TabularInline):
+    model = CourseTopic
+    extra = 1
+
+
+class CourseAudienceItemInline(admin.StackedInline):
+    model = CourseAudienceItem
     extra = 1
 
 
@@ -246,6 +270,10 @@ class CourseAdmin(admin.ModelAdmin):
         WhatYouWillLearnInline,
         RequirementInline,
         WhoIsForInline,
+        CourseDetailFactInline,
+        CourseSkillOutcomeInline,
+        CourseTopicInline,
+        CourseAudienceItemInline,
         CourseTagInline,
         CourseFAQInline,
         CourseComparisonPointInline,

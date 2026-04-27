@@ -3,14 +3,23 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowRight,
   Award,
+  BarChart3,
+  BookOpen,
+  CheckCircle2,
   ChevronDown,
   CircleCheck,
-  CircleX,
-  Cpu,
-  Handshake,
-  Lightbulb,
-  Phone,
-  Rocket,
+  ClipboardCheck,
+  Clock3,
+  Languages,
+  ListChecks,
+  Loader2,
+  MessagesSquare,
+  RefreshCw,
+  Sparkles,
+  Star,
+  Trophy,
+  UserRound,
+  Users,
 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import Navbar from '../components/sheryians/Navbar';
@@ -20,131 +29,107 @@ import { isAuthenticated } from '../lib/auth';
 import { formatCurrency, normalizeCourseDetail } from '../lib/courseContent';
 import useSectionReveal from '../hooks/useSectionReveal';
 
-const CLOUD_BASE = 'https://dfdx9u0psdezh.cloudfront.net';
-const COURSE_BG =
-  'https://sheryians-pre-purchase-frontend.s3.ap-south-1.amazonaws.com/tools_icon/cohort3/homeBgCohort3.webp';
-const TOOLS_BG =
-  'https://sheryians-pre-purchase-frontend.s3.ap-south-1.amazonaws.com/tools_icon/cohort3/projectSectionCohort3bg.webp';
-const BUILD_PRODUCTS_IMAGE = `${CLOUD_BASE}/Visual-Icons/cohort3graphic.webp`;
-const BUILD_PRODUCTS_GLOW = `${CLOUD_BASE}/Visual-Icons/bgofheadingjobready3.webp`;
-
-const builderIconMap = {
-  Rocket,
-  Lightbulb,
-  Cpu,
-  Handshake,
+const iconMap = {
   Award,
-  Phone,
+  BarChart3,
+  BookOpen,
+  CheckCircle2,
+  CircleCheck,
+  ClipboardCheck,
+  Clock3,
+  Languages,
+  ListChecks,
+  MessagesSquare,
+  RefreshCw,
+  Sparkles,
+  Trophy,
+  UserRound,
+  Users,
 };
 
-const certificateFallback = [
-  'Build and showcase real products with practical workflows',
-  'Receive expert mentorship and structured evaluation',
-  'Earn a recognized certificate after completion',
+const anchors = [
+  { href: '#about', label: 'About' },
+  { href: '#syllabus', label: 'Syllabus' },
+  { href: '#certificate', label: 'Certificate' },
+  { href: '#instructor', label: 'Instructor' },
+  { href: '#reviews', label: 'Reviews' },
+  { href: '#faqs', label: 'FAQs' },
 ];
 
-const getMentorKey = (mentor, index = 0) => mentor?.id || `${mentor?.name || 'mentor'}-${index}`;
+const getIcon = (name, fallback = Sparkles) => iconMap[name] || fallback;
 
-const buildMentorShowcase = (platformMentors = [], fallbackMentor = null) => {
-  const dedupedMentors = [];
-  const seenKeys = new Set();
-
-  platformMentors.forEach((mentor, index) => {
-    const key = getMentorKey(mentor, index);
-    if (!seenKeys.has(key)) {
-      seenKeys.add(key);
-      dedupedMentors.push(mentor);
-    }
-  });
-
-  let associatedMentor = dedupedMentors.find((mentor) => mentor.associated);
-
-  if (!associatedMentor && fallbackMentor?.name) {
-    associatedMentor = {
-      id: fallbackMentor.id || 'course-associated-mentor',
-      name: fallbackMentor.name,
-      role: fallbackMentor.role || 'Course Mentor',
-      photoUrl: fallbackMentor.photo || '',
-      associated: true,
-    };
-
-    const fallbackKey = getMentorKey(associatedMentor);
-    if (!seenKeys.has(fallbackKey)) {
-      seenKeys.add(fallbackKey);
-      dedupedMentors.unshift(associatedMentor);
-    }
+const formatNumber = (value) => {
+  const number = Number(value || 0);
+  if (!Number.isFinite(number)) {
+    return '0';
   }
-
-  if (!associatedMentor) {
-    return dedupedMentors.slice(0, 5);
-  }
-
-  const others = dedupedMentors.filter((mentor, index) => {
-    return getMentorKey(mentor, index) !== getMentorKey(associatedMentor);
-  });
-
-  return [
-    ...others.slice(0, 2),
-    associatedMentor,
-    ...others.slice(2, 4),
-  ].filter(Boolean);
+  return new Intl.NumberFormat('en-US', { notation: number > 9999 ? 'compact' : 'standard' }).format(number);
 };
 
-const toYoutubeEmbedUrl = (videoUrl) => {
-  const fallback = 'https://www.youtube.com/embed/k2PLDtpRkwQ';
-  if (!videoUrl) {
-    return fallback;
-  }
-
-  try {
-    const parsed = new URL(videoUrl);
-    const host = parsed.hostname.replace('www.', '');
-    let videoId = '';
-
-    if (host === 'youtu.be') {
-      videoId = parsed.pathname.slice(1);
-    } else if (host.includes('youtube.com')) {
-      videoId =
-        parsed.searchParams.get('v') ||
-        parsed.pathname.split('/shorts/')[1] ||
-        parsed.pathname.split('/embed/')[1] ||
-        '';
-    }
-
-    if (!videoId) {
-      return fallback;
-    }
-
-    return `https://www.youtube.com/embed/${videoId.replace('/', '')}?rel=0&modestbranding=1`;
-  } catch {
-    return fallback;
-  }
+const pluralize = (count, singular, plural = `${singular}s`) => {
+  const safeCount = Number(count || 0);
+  return `${safeCount} ${safeCount === 1 ? singular : plural}`;
 };
 
-const CourseModuleItem = ({ module, index, isOpen, onToggle }) => {
+const SectionHeading = ({ eyebrow, title, body }) => (
+  <div className="max-w-2xl">
+    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/80">{eyebrow}</p>
+    <h2 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-3xl">{title}</h2>
+    {body ? <p className="mt-3 text-sm leading-6 text-white/58 sm:text-base">{body}</p> : null}
+  </div>
+);
+
+const DetailFact = ({ fact }) => {
+  const Icon = getIcon(fact.iconName, CheckCircle2);
   return (
-    <div className="overflow-hidden rounded-2xl border border-black/10 bg-white">
+    <div className="flex gap-3 border-b border-white/8 py-5 last:border-b-0 sm:border-b-0 sm:border-r sm:px-5 sm:last:border-r-0">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-300/20 bg-emerald-400/10 text-emerald-300">
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-white">{fact.value}</p>
+        <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/40">{fact.label}</p>
+        {fact.description ? <p className="mt-2 text-sm leading-5 text-white/52">{fact.description}</p> : null}
+      </div>
+    </div>
+  );
+};
+
+const MetricCard = ({ item }) => {
+  const Icon = getIcon(item.iconName, BookOpen);
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+      <Icon className="h-5 w-5 text-emerald-300" />
+      <p className="mt-4 text-2xl font-semibold text-white">{formatNumber(item.value)}</p>
+      <p className="mt-1 text-sm font-medium text-white/78">{item.label}</p>
+      {item.description ? <p className="mt-1 text-xs leading-5 text-white/45">{item.description}</p> : null}
+    </div>
+  );
+};
+
+const SyllabusLevel = ({ module, index, isOpen, onToggle }) => {
+  const lessons = module.lessons || [];
+  const quizCount = lessons.filter((lesson) => lesson.quiz).length;
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0b0d0c]">
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-start justify-between gap-4 p-5 text-left md:p-6"
+        className="flex w-full items-start justify-between gap-5 p-5 text-left transition hover:bg-white/[0.025] sm:p-6"
       >
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-700/85">
-            Module {index + 1}
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/70">
+            Level {index + 1}
           </p>
-          <h3 className="mt-1 text-xl font-semibold leading-tight text-[#111827] md:text-2xl">
-            {module.title}
-          </h3>
-          {module.description ? (
-            <p className="mt-2 text-sm text-[#4A5565] md:text-base">{module.description}</p>
-          ) : null}
+          <h3 className="mt-2 text-lg font-semibold text-white sm:text-xl">{module.title}</h3>
+          {module.description ? <p className="mt-2 text-sm leading-6 text-white/55">{module.description}</p> : null}
+          <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/55">
+            <span className="rounded-full border border-white/10 px-3 py-1">{pluralize(lessons.length, 'lesson')}</span>
+            <span className="rounded-full border border-white/10 px-3 py-1">{pluralize(quizCount, 'test')}</span>
+          </div>
         </div>
-        <ChevronDown
-          className={`mt-1 h-7 w-7 shrink-0 text-emerald-700 transition-transform duration-300 ${
-            isOpen ? 'rotate-180' : ''
-          }`}
-        />
+        <ChevronDown className={`mt-1 h-5 w-5 shrink-0 text-white/55 transition ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       <AnimatePresence initial={false}>
@@ -153,38 +138,47 @@ const CourseModuleItem = ({ module, index, isOpen, onToggle }) => {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.28, ease: 'easeInOut' }}
+            transition={{ duration: 0.24, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            <div className="space-y-2 px-5 pb-6 text-sm text-[#1f2937] md:px-6 md:text-base">
-              {(module.content || []).map((item) => (
-                <div key={`${module.title}-${item}`} className="flex items-start gap-3">
-                  <span className="mt-2 h-1.5 w-1.5 rounded-full bg-emerald-600" />
-                  <p>{item}</p>
-                </div>
-              ))}
-              {(module.lessons || []).length > 0 ? (
-                <div className="mt-5 space-y-3 border-t border-black/10 pt-5">
-                  {module.lessons.map((lesson, lessonIndex) => (
+            <div className="border-t border-white/8 p-5 pt-3 sm:p-6 sm:pt-4">
+              {lessons.length > 0 ? (
+                <div className="space-y-2">
+                  {lessons.map((lesson, lessonIndex) => (
                     <div
                       key={lesson.id || `${lesson.title}-${lessonIndex}`}
-                      className="rounded-2xl border border-black/10 bg-[#f7f7f7] p-4"
+                      className="grid gap-3 rounded-xl border border-white/8 bg-white/[0.025] p-4 sm:grid-cols-[1fr_auto] sm:items-center"
                     >
-                      <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.14em] text-emerald-700">
-                        <span>Lesson {lessonIndex + 1}</span>
-                        <span>/</span>
-                        <span>{lesson.type || lesson.lesson_type || 'article'}</span>
-                        <span>/</span>
-                        <span>{lesson.xpReward || lesson.xp_reward || 10} XP</span>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-300/70">
+                          <span>Lesson {lessonIndex + 1}</span>
+                          <span>{lesson.type || 'article'}</span>
+                          {lesson.isPreview ? <span>Preview</span> : null}
+                        </div>
+                        <p className="mt-2 text-sm font-semibold text-white sm:text-base">{lesson.title}</p>
+                        {lesson.summary ? <p className="mt-1 text-sm leading-6 text-white/52">{lesson.summary}</p> : null}
                       </div>
-                      <p className="mt-2 text-lg font-semibold text-[#111827]">{lesson.title}</p>
-                      {lesson.summary ? (
-                        <p className="mt-1 text-sm leading-6 text-[#4A5565]">{lesson.summary}</p>
-                      ) : null}
+                      <div className="flex flex-wrap gap-2 text-xs text-white/55 sm:justify-end">
+                        <span className="rounded-full bg-white/[0.05] px-3 py-1">
+                          {lesson.estimatedMinutes || 8} min
+                        </span>
+                        <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-emerald-200">
+                          +{lesson.xpReward || 10} XP
+                        </span>
+                        {lesson.quiz ? (
+                          <span className="rounded-full bg-white/[0.05] px-3 py-1">
+                            {pluralize(lesson.quiz.questionCount || 0, 'question')}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
                   ))}
                 </div>
-              ) : null}
+              ) : (
+                <div className="rounded-xl border border-white/8 bg-white/[0.025] p-4 text-sm text-white/55">
+                  Lessons will appear here once this level is published.
+                </div>
+              )}
             </div>
           </motion.div>
         ) : null}
@@ -193,121 +187,64 @@ const CourseModuleItem = ({ module, index, isOpen, onToggle }) => {
   );
 };
 
-const MentorCarousel = ({ mentors, initialActive = 0 }) => {
-  const [active, setActive] = useState(initialActive);
-  const total = mentors.length;
-
-  if (total === 0) {
-    return null;
-  }
-
-  const activeIndex = ((active % total) + total) % total;
-
-  const diffFromActive = (index) => {
-    let diff = index - activeIndex;
-    if (diff > total / 2) {
-      diff -= total;
-    }
-    if (diff < -total / 2) {
-      diff += total;
-    }
-    return diff;
-  };
-
-  const visibleCards = mentors
-    .map((mentor, index) => {
-      const diff = diffFromActive(index);
-      const absDiff = Math.abs(diff);
-
-      if (absDiff > 2) {
-        return null;
-      }
-
-      const translateX = diff === 0 ? 0 : diff * 200;
-      const translateZ = diff === 0 ? 280 : absDiff === 1 ? 120 : -80;
-      const rotateY = diff * -18;
-      const scale = diff === 0 ? 1.04 : absDiff === 1 ? 0.9 : 0.78;
-      const opacity = diff === 0 ? 1 : absDiff === 1 ? 0.88 : 0.72;
-      const zIndex = diff === 0 ? 300 : absDiff === 1 ? 200 : 100;
-
-      return {
-        mentor,
-        index,
-        style: {
-          transform: `translate(-50%, -50%) translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
-          opacity,
-          zIndex,
-        },
-      };
-    })
-    .filter(Boolean);
-
-  const move = (step) => {
-    setActive((prev) => (prev + step + total) % total);
-  };
+const EnrollmentCard = ({ course, enrollmentHref }) => {
+  const includes = course.courseIncludes || [];
+  const price = course.pricing?.salePrice ?? course.salePrice;
+  const originalPrice = course.pricing?.price ?? course.price;
 
   return (
-    <div className="relative mt-8 w-full overflow-hidden px-2 [perspective:1400px] md:px-4">
-      <div className="relative h-[46vh] min-h-[320px] w-full [transform-style:preserve-3d] md:h-[70vh] lg:h-[76vh]">
-        {visibleCards.map((card) => (
-          <button
-            key={`${card.mentor.name}-${card.index}`}
-            type="button"
-            onClick={() => setActive(card.index)}
-            className="absolute left-1/2 top-1/2 h-[84%] w-[62vw] overflow-hidden rounded-2xl border border-white/15 bg-black shadow-[0_16px_48px_rgba(0,0,0,0.48)] transition-[transform,opacity] duration-700 md:w-[30vw] md:min-w-[220px] lg:w-[20vw]"
-            style={card.style}
-          >
-            {card.mentor.photoUrl ? (
-              <img
-                src={card.mentor.photoUrl}
-                alt={card.mentor.name || 'Mentor'}
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
-            ) : (
-              <div className="flex h-full w-full flex-col items-center justify-center bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.25),transparent_58%)] px-6 text-center">
-                <div className="flex h-24 w-24 items-center justify-center rounded-full border border-white/20 bg-white/5 text-3xl font-semibold text-white">
-                  {(card.mentor.name || 'M').slice(0, 1)}
+    <aside className="rounded-3xl border border-white/10 bg-[#0c0f0e]/90 p-4 shadow-[0_26px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl lg:sticky lg:top-28">
+      <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+        {course.thumbnail ? (
+          <img src={course.thumbnail} alt={course.title} className="aspect-[16/10] w-full object-cover" />
+        ) : (
+          <div className="aspect-[16/10] bg-[radial-gradient(circle_at_30%_20%,rgba(16,185,129,0.35),transparent_55%),#090b0a]" />
+        )}
+      </div>
+
+      <div className="px-1 pt-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300/80">
+          Start learning
+        </p>
+        <div className="mt-3 flex flex-wrap items-end gap-2">
+          <span className="text-3xl font-semibold text-white">{formatCurrency(price)}</span>
+          {Number(originalPrice) > Number(price) ? (
+            <span className="pb-1 text-sm text-white/45 line-through">{formatCurrency(originalPrice)}</span>
+          ) : null}
+        </div>
+
+        <a
+          href={enrollmentHref}
+          className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-400 px-5 py-3 text-sm font-semibold text-black transition hover:bg-emerald-300"
+        >
+          Start course
+          <ArrowRight className="h-4 w-4" />
+        </a>
+        <Link
+          to={`/learn/${course.identifier}`}
+          className="mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.035] px-5 py-3 text-sm font-semibold text-white transition hover:border-emerald-300/50"
+        >
+          Open lesson workspace
+        </Link>
+
+        {includes.length > 0 ? (
+          <div className="mt-6 space-y-3">
+            {includes.slice(0, 4).map((item) => {
+              const Icon = getIcon(item.iconName, CircleCheck);
+              return (
+                <div key={item.label} className="flex items-center justify-between gap-3 text-sm">
+                  <span className="flex min-w-0 items-center gap-2 text-white/68">
+                    <Icon className="h-4 w-4 shrink-0 text-emerald-300" />
+                    <span className="truncate">{item.label}</span>
+                  </span>
+                  <span className="font-semibold text-white">{formatNumber(item.value)}</span>
                 </div>
-              </div>
-            )}
-
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/88 to-transparent px-5 pb-6 pt-20 text-left">
-              {card.mentor.associated ? (
-                <span className="inline-flex rounded-full border border-emerald-400/35 bg-emerald-500/15 px-3 py-1 text-[10px] uppercase tracking-[0.24em] text-emerald-300">
-                  Course Mentor
-                </span>
-              ) : null}
-              <p className="mt-4 text-2xl font-semibold text-white">
-                {card.mentor.name || 'Course Mentor'}
-              </p>
-              <p className="mt-2 text-xs uppercase tracking-[0.24em] text-emerald-300">
-                {card.mentor.role || 'Instructor'}
-              </p>
-            </div>
-          </button>
-        ))}
+              );
+            })}
+          </div>
+        ) : null}
       </div>
-
-      <div className="mt-4 flex justify-center gap-5">
-        <button
-          type="button"
-          aria-label="Previous mentor"
-          onClick={() => move(-1)}
-          className="h-12 w-12 rounded-full border-2 border-white/55 bg-black/40 text-2xl text-white transition hover:bg-black/70"
-        >
-          {'<'}
-        </button>
-        <button
-          type="button"
-          aria-label="Next mentor"
-          onClick={() => move(1)}
-          className="h-12 w-12 rounded-full border-2 border-white/55 bg-black/40 text-2xl text-white transition hover:bg-black/70"
-        >
-          {'>'}
-        </button>
-      </div>
-    </div>
+    </aside>
   );
 };
 
@@ -318,9 +255,8 @@ const CourseDetail = () => {
   const [course, setCourse] = useState(null);
   const [isLoadingCourse, setIsLoadingCourse] = useState(Boolean(requestedCourseId));
   const [hasError, setHasError] = useState(!requestedCourseId);
-  const [openModule, setOpenModule] = useState(-1);
-  const [openFaq, setOpenFaq] = useState(-1);
-  const [activeTech, setActiveTech] = useState('');
+  const [openModule, setOpenModule] = useState(0);
+  const [openFaq, setOpenFaq] = useState(0);
   const [showStickyCta, setShowStickyCta] = useState(false);
 
   useEffect(() => {
@@ -343,7 +279,6 @@ const CourseDetail = () => {
           setCourse(normalizedCourse);
           setOpenModule(normalizedCourse.curriculum.length > 0 ? 0 : -1);
           setOpenFaq(normalizedCourse.faqs.length > 0 ? 0 : -1);
-          setActiveTech(normalizedCourse.technologySections[0]?.name || '');
         }
       } catch {
         if (!isCancelled) {
@@ -371,33 +306,61 @@ const CourseDetail = () => {
   useEffect(() => {
     const onScroll = () => {
       const top = window.scrollY || 0;
-      const maxScroll =
-        document.documentElement.scrollHeight - document.documentElement.clientHeight;
-      setShowStickyCta(top > 420 && top < maxScroll - 200);
+      const maxScroll = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      setShowStickyCta(top > 460 && top < maxScroll - 240);
     };
 
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-    };
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const currentTechnologySection = useMemo(() => {
-    return (
-      course?.technologySections.find((section) => section.name === activeTech) ||
-      course?.technologySections[0] ||
-      null
-    );
-  }, [activeTech, course]);
+  const derived = useMemo(() => {
+    if (!course) {
+      return {};
+    }
+
+    const syllabus = course.syllabusSummary || {};
+    const skillOutcomes =
+      course.skillOutcomes?.length > 0
+        ? course.skillOutcomes
+        : (course.heroBullets || []).slice(0, 4).map((point) => ({
+            title: point.split(':', 1)[0] || point,
+            description: point,
+            iconName: 'Sparkles',
+          }));
+    const topics =
+      course.topics?.length > 0
+        ? course.topics
+        : (course.tags || []).map((name) => ({ name, slug: String(name).toLowerCase().replace(/\s+/g, '-') }));
+    const audienceCards =
+      course.audienceCards?.length > 0
+        ? course.audienceCards
+        : (course.targetAudience || []).map((title) => ({
+            title,
+            description: 'Build practical confidence with guided lessons, projects, and progress tracking.',
+            iconName: 'Users',
+          }));
+
+    return {
+      syllabus,
+      skillOutcomes,
+      topics,
+      audienceCards,
+      reviewAverage: Number(course.reviewsSummary?.average || course.ratingAvg || 0),
+      reviewCount: Number(course.reviewsSummary?.count || course.ratingCount || 0),
+    };
+  }, [course]);
 
   if (isLoadingCourse) {
     return (
       <div className="min-h-screen bg-black text-white">
         <Navbar />
-        <main className="mx-auto max-w-4xl px-6 pb-24 pt-36 text-center">
-          <p className="text-3xl font-semibold">Loading course...</p>
+        <main className="mx-auto flex min-h-[70vh] max-w-5xl items-center justify-center px-6 pt-24">
+          <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.035] px-5 py-3 text-sm text-white/70">
+            <Loader2 className="h-4 w-4 animate-spin text-emerald-300" />
+            Loading course detail
+          </div>
         </main>
       </div>
     );
@@ -407,542 +370,442 @@ const CourseDetail = () => {
     return (
       <div className="min-h-screen bg-black text-white">
         <Navbar />
-        <main className="mx-auto max-w-4xl px-6 pb-24 pt-36 text-center">
-          <p className="text-3xl font-semibold">Course not found.</p>
+        <main className="mx-auto min-h-[70vh] max-w-4xl px-6 pb-24 pt-40 text-center">
+          <p className="text-sm uppercase tracking-[0.22em] text-emerald-300/75">Course not found</p>
+          <h1 className="mt-4 text-3xl font-semibold text-white">This course is not available.</h1>
+          <Link
+            to="/courses"
+            className="mt-8 inline-flex min-h-12 items-center justify-center rounded-xl bg-emerald-400 px-5 text-sm font-semibold text-black"
+          >
+            Browse courses
+          </Link>
         </main>
         <Footer />
       </div>
     );
   }
 
-  const comparison = course.comparison || { left: [], right: [] };
-  const builderItems = course.builderItems || [];
-  const certificatePoints =
-    course.certificatePoints.length > 0 ? course.certificatePoints : certificateFallback;
-  const mentorShowcase = buildMentorShowcase(
-    course.platformMentors.length > 0 ? course.platformMentors : course.mentorSpotlights,
-    course.mentor,
-  );
-  const associatedMentorIndex = Math.max(
-    mentorShowcase.findIndex((mentor) => mentor.associated),
-    0,
-  );
-  const tags = course.tags || [];
   const enrollmentPath = `/dashboard/join-course?course=${encodeURIComponent(course.slug || course.id)}`;
   const enrollmentHref = isAuthenticated()
     ? enrollmentPath
     : `/login?next=${encodeURIComponent(enrollmentPath)}`;
-  const heroVideoEmbed = toYoutubeEmbedUrl(course.displayVideo);
+  const facts = course.detailFacts || [];
+  const mentor = course.mentor || {};
+  const reviews = course.reviewsSummary?.items || [];
+  const certificatePoints = course.certificatePoints?.length > 0
+    ? course.certificatePoints
+    : [
+        'Complete the course lessons, quizzes, and required practice work.',
+        'Show your studied skills on a shareable certificate page.',
+        'Use the certificate in your portfolio, resume, or LinkedIn profile.',
+      ];
 
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-emerald-500/30 selection:text-emerald-100">
+    <div className="min-h-screen bg-black text-white selection:bg-emerald-400/25 selection:text-emerald-100">
       <Navbar />
 
-      <main ref={pageRef} className="relative overflow-x-hidden pb-24 pt-28 md:pt-32">
-        <img
-          src={COURSE_BG}
-          alt="Background"
-          className="pointer-events-none absolute left-0 top-0 z-0 w-full object-contain opacity-30 blur-2xl"
-        />
+      <main ref={pageRef} className="relative overflow-hidden pb-24 pt-28">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[620px] bg-[radial-gradient(circle_at_50%_10%,rgba(16,185,129,0.18),transparent_58%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:96px_96px] opacity-35" />
 
-        <section className="relative z-10 px-4 md:px-8" data-gsap-section data-motion="hero">
-          <div className="mx-auto grid max-w-[1400px] gap-8 lg:grid-cols-[1.95fr_1fr]">
-            <div className="self-start overflow-hidden rounded-2xl border border-[#4E4A48]/85 bg-black" data-gsap-item>
-              <div className="relative">
-                <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-24 bg-gradient-to-b from-black/80 via-black/45 to-transparent" />
+        <section className="relative z-10 px-4 sm:px-6 lg:px-8" data-gsap-section data-motion="hero">
+          <div className="mx-auto max-w-7xl">
+            <nav className="flex flex-wrap items-center gap-2 text-sm text-white/45" data-gsap-item>
+              <Link to="/courses" className="transition hover:text-white">Courses</Link>
+              <span>/</span>
+              {course.category?.name ? (
+                <Link to={`/courses?category=${course.category.slug}`} className="transition hover:text-white">
+                  {course.category.name}
+                </Link>
+              ) : (
+                <span>Catalog</span>
+              )}
+              <span>/</span>
+              <span className="text-white/70">{course.title}</span>
+            </nav>
 
-                <div className="pointer-events-none absolute left-4 right-4 top-4 z-30 flex items-start gap-3 md:left-6 md:right-6 md:top-5">
-                  {course.thumbnail ? (
-                    <img
-                      src={course.thumbnail}
-                      alt=""
-                      className="mt-0.5 h-10 w-10 rounded-full border border-white/15 bg-black/75 object-cover"
-                    />
-                  ) : (
-                    <div className="mt-0.5 h-10 w-10 rounded-full border border-white/15 bg-black/75" />
-                  )}
-                  <div className="min-w-0">
-                    <p className="truncate text-lg font-semibold leading-tight text-white md:text-4xl">
-                      {course.title}
-                    </p>
-                    <p className="text-sm text-white/85 md:text-lg">
-                      {course.mentor?.name || 'Design School'}
-                    </p>
-                  </div>
+            <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, ease: 'easeOut' }}
+                className="min-w-0"
+                data-gsap-item
+              >
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded-full border border-emerald-300/25 bg-emerald-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200">
+                    {course.badgeText || 'Course'}
+                  </span>
+                  <span className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-1 text-xs text-white/60">
+                    {course.levelLabel}
+                  </span>
+                  <span className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-1 text-xs text-white/60">
+                    {course.type === 'self-paced' ? 'Self-paced' : 'Live cohort'}
+                  </span>
                 </div>
 
-                <iframe
-                  className="block aspect-video w-full"
-                  src={heroVideoEmbed}
-                  title={course.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  loading="lazy"
-                  data-gsap-media
-                />
-              </div>
-
-              <div className="px-5 pb-7 pt-7 md:px-8 md:pb-10 md:pt-9">
-                <h1 className="max-w-4xl text-[2rem] font-semibold leading-[1.04] tracking-tight text-white sm:text-[2.65rem] md:text-[3.55rem]">
+                <h1 className="mt-6 max-w-4xl text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
                   {course.title}
                 </h1>
-                <div className="mt-3 flex items-end gap-3 md:mt-4 md:gap-5">
-                  <img
-                    src={`${CLOUD_BASE}/courses/cohort3heroArrowImage.webp`}
-                    alt=""
-                    className="h-7 w-18 object-contain md:h-10 md:w-28"
-                  />
-                  <span className="inline-flex rounded-full border border-emerald-400/55 bg-emerald-500/15 px-4 py-1 text-xs uppercase tracking-[0.12em] text-emerald-200 md:px-5 md:py-1.5 md:text-base">
-                    {course.badgeText}
-                  </span>
-                </div>
-                <p className="mt-5 max-w-5xl text-[1.03rem] font-light leading-snug text-white/70 md:mt-6 md:text-[1.22rem]">
+                <p className="mt-5 max-w-3xl text-base leading-7 text-white/62 sm:text-lg">
                   {course.description}
                 </p>
+
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                  <a
+                    href={enrollmentHref}
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-400 px-5 text-sm font-semibold text-black transition hover:bg-emerald-300"
+                  >
+                    Start course
+                    <ArrowRight className="h-4 w-4" />
+                  </a>
+                  <a
+                    href="#syllabus"
+                    className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/12 bg-white/[0.035] px-5 text-sm font-semibold text-white transition hover:border-emerald-300/40"
+                  >
+                    View syllabus
+                  </a>
+                </div>
+
+                <div className="mt-9 grid gap-4 sm:grid-cols-3">
+                  <div>
+                    <p className="text-2xl font-semibold text-white">{formatNumber(course.ratingCount || derived.reviewCount)}</p>
+                    <p className="mt-1 text-sm text-white/50">learners enrolled</p>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Star className="h-4 w-4 fill-emerald-300 text-emerald-300" />
+                      <p className="text-2xl font-semibold text-white">{derived.reviewAverage ? derived.reviewAverage.toFixed(1) : 'New'}</p>
+                    </div>
+                    <p className="mt-1 text-sm text-white/50">{formatNumber(derived.reviewCount)} ratings</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-semibold text-white">
+                      {pluralize(derived.syllabus?.lessonCount || 0, 'lesson')}
+                    </p>
+                    <p className="mt-1 text-sm text-white/50">with quizzes and XP</p>
+                  </div>
+                </div>
+              </motion.div>
+
+              <div data-gsap-item>
+                <EnrollmentCard course={course} enrollmentHref={enrollmentHref} />
               </div>
             </div>
+          </div>
+        </section>
 
-            <aside className="h-fit self-start rounded-2xl border border-[#4E4A48] bg-[radial-gradient(120%_120%_at_0%_0%,rgba(29,130,72,0.33),rgba(0,0,0,0.96)_73%)] p-5 md:p-7 lg:sticky lg:top-28" data-gsap-item>
-              <div className="flex flex-wrap gap-2.5">
-                {course.heroHighlights.map((item) => (
-                  <div
-                    key={item.title}
-                    className="w-fit rounded-lg bg-gradient-to-b from-[#353536] to-[#252528] p-[1px]"
-                  >
-                    <div className="flex items-center gap-1 rounded-lg bg-[#252528] px-3 py-1.5 text-sm text-emerald-400">
-                      <span className="text-white">* {item.title}:</span>
-                      <span className="font-bold text-white">{item.value}</span>
-                    </div>
-                  </div>
+        <section className="sticky top-20 z-20 mt-12 border-y border-white/8 bg-black/72 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
+          <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto">
+            {anchors.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                className="shrink-0 rounded-full px-3 py-2 text-sm font-medium text-white/55 transition hover:bg-white/[0.05] hover:text-white"
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <section className="relative z-10 px-4 pt-10 sm:px-6 lg:px-8" data-gsap-section data-motion="up">
+          <div className="mx-auto max-w-7xl overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035]" data-gsap-item>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4">
+              {facts.slice(0, 8).map((fact) => (
+                <DetailFact key={`${fact.label}-${fact.value}`} fact={fact} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="about" className="relative z-10 px-4 pt-20 sm:px-6 lg:px-8" data-gsap-section data-motion="up">
+          <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[minmax(0,0.72fr)_minmax(280px,0.28fr)]">
+            <div data-gsap-item>
+              <SectionHeading
+                eyebrow="About this course"
+                title="Build useful skills through a guided learning loop."
+                body="The page is powered by your course API, so every detail, lesson, quiz, topic, review, and certificate point can be managed from the backend."
+              />
+              <div className="mt-6 space-y-5 text-base leading-8 text-white/62">
+                {(course.description || course.shortDescription || '').split('\n').filter(Boolean).slice(0, 3).map((paragraph, index) => (
+                  <p key={`${paragraph}-${index}`}>{paragraph}</p>
                 ))}
               </div>
 
-              <div className="mt-8 space-y-3 text-[0.98rem] text-white/80 md:text-[1.14rem]">
-                {(course.heroBullets.length > 0 ? course.heroBullets : ['Detailed course outcomes will appear here once the mentor updates them.']).map((item) => (
-                  <div key={item} className="flex gap-3">
-                    <CircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400 md:mt-1 md:h-5 md:w-5" />
-                    <p>{item}</p>
-                  </div>
+              {derived.skillOutcomes.length > 0 ? (
+                <div className="mt-10 grid gap-4 sm:grid-cols-2">
+                  {derived.skillOutcomes.map((skill) => {
+                    const Icon = getIcon(skill.iconName, Sparkles);
+                    return (
+                      <div key={skill.title} className="rounded-2xl border border-white/10 bg-[#0b0d0c] p-5">
+                        <Icon className="h-5 w-5 text-emerald-300" />
+                        <h3 className="mt-4 text-base font-semibold text-white">{skill.title}</h3>
+                        {skill.description ? <p className="mt-2 text-sm leading-6 text-white/52">{skill.description}</p> : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+
+            <aside className="h-fit rounded-3xl border border-white/10 bg-[#0b0d0c] p-5 lg:sticky lg:top-40" data-gsap-item>
+              <p className="text-sm font-semibold text-white">Course details</p>
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                {(course.courseIncludes || []).slice(0, 4).map((item) => (
+                  <MetricCard key={item.label} item={item} />
                 ))}
               </div>
-
-              <div className="mt-9">
-                <p className="text-3xl font-semibold text-white md:text-4xl">
-                  <span className="text-white">{formatCurrency(course.pricing.salePrice)}</span>{' '}
-                  <span className="ml-2 text-lg font-normal text-white/70 line-through md:text-xl">
-                    {formatCurrency(course.pricing.price)}
-                  </span>
-                </p>
-                {course.pricing.discountPercentage > 0 ? (
-                  <p className="mt-2 text-xs uppercase tracking-[0.18em] text-emerald-300/85 md:text-sm">
-                    {course.pricing.discountPercentage}% discount active
-                  </p>
-                ) : null}
-              </div>
-
-              <a
-                href={enrollmentHref}
-                className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(95deg,#169254_6%,#052f1f_235%)] px-6 py-4 text-lg font-semibold text-white transition hover:brightness-110"
-              >
-                Join Course Now
-                <ArrowRight className="h-5 w-5" />
-              </a>
-
-              <Link
-                to={`/learn/${course.identifier}`}
-                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/[0.04] px-6 py-4 text-lg font-semibold text-white transition hover:border-emerald-300/60"
-              >
-                Open Learning Room
-                <ArrowRight className="h-5 w-5" />
-              </Link>
-
-              <a
-                href={enrollmentHref}
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#8D8D8D] bg-[linear-gradient(90deg,#000_0%,#252528_100%)] px-6 py-4 text-lg font-medium text-white"
-              >
-                Join Course Now
-                <ArrowRight className="h-5 w-5" />
-              </a>
             </aside>
           </div>
         </section>
 
-        <section className="relative z-10 mt-16 overflow-hidden border-y border-white/6 px-4 py-16 md:mt-20 md:px-8 md:py-24" data-gsap-section data-motion="up">
-          <img
-            src={BUILD_PRODUCTS_GLOW}
-            alt=""
-            className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-35 blur-2xl"
-          />
-          <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_20%,rgba(16,185,129,0.2),transparent_55%)]" />
-
-          <div className="relative mx-auto max-w-7xl text-center">
-            <h2 className="bg-[linear-gradient(180deg,#7df6a3_0%,#22c55e_45%,#0f8b3b_100%)] bg-clip-text text-[2.3rem] font-black leading-[0.98] tracking-tight text-transparent drop-shadow-[0_10px_45px_rgba(34,197,94,0.35)] md:text-[6.8rem]" data-gsap-item>
-              Build Real Products
-            </h2>
-            <p className="mx-auto mt-4 max-w-4xl text-[1.7rem] font-light leading-tight text-white/92 md:mt-5 md:text-[4.4rem]" data-gsap-item>
-              That Actually Matters To The World
-            </p>
-
-            <div className="relative mx-auto mt-10 max-w-5xl md:mt-14" data-gsap-item data-gsap-media>
-              <img
-                src={BUILD_PRODUCTS_IMAGE}
-                alt="Build real products visual"
-                className="mx-auto w-full object-contain drop-shadow-[0_0_70px_rgba(74,222,128,0.25)]"
-                loading="lazy"
+        <section className="relative z-10 px-4 pt-20 sm:px-6 lg:px-8" data-gsap-section data-motion="left">
+          <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.36fr_0.64fr]">
+            <div data-gsap-item>
+              <SectionHeading
+                eyebrow="Topics"
+                title="A clear map of what this course covers."
+                body="Use topics to help learners understand the exact domain, tools, and concepts before they enroll."
               />
-            </div>
-          </div>
-        </section>
-
-        {comparison.left.length > 0 || comparison.right.length > 0 ? (
-          <section className="relative z-10 mt-24 px-4 md:px-8" data-gsap-section data-motion="left">
-            <div className="mx-auto max-w-6xl text-center">
-              <div className="inline-flex rounded-sm border border-emerald-400/35 bg-emerald-400/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-300" data-gsap-item>
-                Comparison
-              </div>
-              <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]" data-gsap-item>
-                What Sets This Course Apart
-              </h2>
-            </div>
-
-            <div className="mx-auto mt-10 grid max-w-6xl gap-8 rounded-3xl border border-[#302C2A] p-5 md:p-8 lg:grid-cols-2">
-              <div className="rounded-3xl border border-emerald-400/20 bg-[radial-gradient(64%_90%_at_50%_8%,rgba(80,164,109,0.1)_0%,rgba(8,8,8,0.26)_58%,rgba(7,7,7,0.36)_100%)] p-6" data-gsap-item>
-                <img
-                  src={`${CLOUD_BASE}/logos/full-logo.webp`}
-                  alt="Design School"
-                  className="h-12 object-contain"
-                />
-                <div className="mt-6 space-y-4">
-                  {comparison.left.map((item) => (
-                    <div key={item} className="flex items-start gap-3 text-lg text-white/85">
-                      <CircleCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
-                      <p>{item}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-3xl border border-white/15 bg-[#151515]/70 p-6" data-gsap-item>
-                <h3 className="text-3xl font-light">Others</h3>
-                <div className="mt-6 space-y-4">
-                  {comparison.right.map((item) => (
-                    <div key={item} className="flex items-start gap-3 text-lg text-white/75">
-                      <CircleX className="mt-0.5 h-5 w-5 shrink-0 text-[#E8602F]" />
-                      <p>{item}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
-        ) : null}
-
-        {course.technologySections.length > 0 ? (
-          <section className="relative z-10 mt-28 overflow-hidden px-4 py-20 md:px-8 md:py-28" data-gsap-section data-motion="right">
-            <img
-              src={TOOLS_BG}
-              alt=""
-              className="pointer-events-none absolute inset-0 z-0 h-full w-full scale-150 object-cover opacity-45 blur-lg"
-            />
-
-            <div className="relative mx-auto max-w-6xl text-center">
-              <div className="inline-flex rounded-sm border border-emerald-400/35 bg-emerald-400/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-300" data-gsap-item>
-                Technologies
-              </div>
-              <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]" data-gsap-item>
-                Industry Tools You&apos;ll Master
-              </h2>
-
-              <div className="mt-12 flex flex-wrap justify-center gap-3 md:gap-5" data-gsap-item>
-                {course.technologySections.map((tab) => (
-                  <button
-                    key={tab.name}
-                    type="button"
-                    onClick={() => setActiveTech(tab.name)}
-                    style={{
-                      boxShadow:
-                        '0px 33px 68px 0px #FFFFFF1A inset, 0px 3.6px 6.3px 0px #0000000D, 0px 3.6px 3.6px 0px #0000001A, 0px 3.6px 3.6px 0px #0000000D',
-                    }}
-                    className={`rounded-xl border px-6 py-3 text-base transition md:rounded-2xl md:px-8 md:py-4 md:text-2xl ${
-                      currentTechnologySection?.name === tab.name
-                        ? 'border-emerald-300 bg-[linear-gradient(180deg,#158B3E_0%,#50A46D_100%)]'
-                        : 'border-[#4E4A48] bg-transparent'
-                    }`}
-                  >
-                    {tab.name}
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-8 rounded-3xl border border-white/20 bg-black/25 px-6 py-10 md:px-8 md:py-12" data-gsap-item>
-                <h3 className="mb-10 text-3xl font-semibold tracking-wide md:text-4xl">TOOLS AND TECHNOLOGIES</h3>
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                  {(currentTechnologySection?.items || []).map((item) => (
-                    <div
-                      key={item.name}
-                      className="rounded-2xl border border-[#333] bg-[#1A1A1A] p-4 transition hover:border-emerald-400/60"
-                    >
-                      {item.iconUrl ? (
-                        <img
-                          className="mx-auto h-24 w-24 object-contain"
-                          src={item.iconUrl}
-                          alt={item.name}
-                        />
-                      ) : (
-                        <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-white/5 text-3xl text-emerald-300">
-                          {item.name.slice(0, 1)}
-                        </div>
-                      )}
-                      <p className="mt-3 text-sm font-medium md:text-lg">{item.name}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <a
-                href={enrollmentHref}
-                className="mt-14 inline-flex items-center gap-2 rounded-2xl bg-[linear-gradient(95deg,#169254_6%,#052f1f_235%)] px-8 py-4 text-lg font-semibold text-white shadow-[0_10px_20px_0px_rgba(113,215,148,0.3)]"
-                data-gsap-item
-              >
-                Join Course Now
-                <ArrowRight className="h-5 w-5" />
-              </a>
-            </div>
-          </section>
-        ) : null}
-
-        <section
-          id="modules_and_curriculum"
-          className="relative z-10 mx-4 mt-24 rounded-3xl bg-[#EEEEEE] px-4 py-16 text-black md:mx-8 md:px-8"
-          data-gsap-section
-          data-motion="up"
-        >
-          <div className="mx-auto max-w-7xl">
-            <div className="text-center">
-              <div className="inline-flex rounded-sm border border-emerald-600/30 bg-emerald-600/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-700" data-gsap-item>
-                Curriculum
-              </div>
-              <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]" data-gsap-item>
-                Structured Curriculum Designed For Real Growth
-              </h2>
-            </div>
-
-            <div className="mt-10 grid gap-6 lg:grid-cols-[0.42fr_0.58fr] lg:gap-10">
-              <aside className="h-fit rounded-2xl border border-black/10 bg-white p-6 lg:sticky lg:top-28" data-gsap-item>
-                <h3 className="text-2xl font-semibold text-[#111827]">Inside This Program</h3>
-                <p className="mt-3 text-[#374151]">
-                  Duration: <span className="font-semibold">{course.durationWeeks} weeks</span>
-                </p>
-                <p className="mt-1 text-[#374151]">
-                  Difficulty: <span className="font-semibold">{course.levelLabel}</span>
-                </p>
-
-                <div className="mt-6">
-                  <p className="text-sm uppercase tracking-[0.16em] text-emerald-700">Prerequisites</p>
-                  <div className="mt-3 space-y-3 text-sm text-[#1f2937] md:text-base">
-                    {course.requirements.length > 0 ? (
-                      course.requirements.map((item) => (
-                        <div key={item} className="flex items-start gap-3">
-                          <span className="mt-2 h-1.5 w-1.5 rounded-full bg-emerald-600" />
-                          <p>{item}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-[#4A5565]">No prerequisites have been added yet.</p>
-                    )}
-                  </div>
-                </div>
-
-                {course.targetAudience.length > 0 ? (
-                  <div className="mt-6">
-                    <p className="text-sm uppercase tracking-[0.16em] text-emerald-700">Best For</p>
-                    <div className="mt-3 space-y-3 text-sm text-[#1f2937] md:text-base">
-                      {course.targetAudience.map((item) => (
-                        <div key={item} className="flex items-start gap-3">
-                          <span className="mt-2 h-1.5 w-1.5 rounded-full bg-emerald-600" />
-                          <p>{item}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
-                {tags.length > 0 ? (
-                  <div className="mt-8 rounded-xl border border-emerald-700/20 bg-emerald-100/40 p-4 text-sm text-emerald-900">
-                    {tags.join(' | ')}
-                  </div>
-                ) : null}
-              </aside>
-
-              <div className="space-y-4" data-gsap-item>
-                {course.curriculum.length > 0 ? (
-                  course.curriculum.map((module, index) => (
-                    <CourseModuleItem
-                      key={`${module.title}-${index}`}
-                      module={module}
-                      index={index}
-                      isOpen={openModule === index}
-                      onToggle={() => setOpenModule(openModule === index ? -1 : index)}
-                    />
-                  ))
-                ) : (
-                  <div className="rounded-2xl border border-black/10 bg-white px-6 py-8 text-[#4A5565]">
-                    Curriculum modules will appear here once the mentor publishes them.
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {builderItems.length > 0 ? (
-          <section className="relative z-10 mt-24 px-4 md:px-8" data-gsap-section data-motion="zoom">
-            <div className="mx-auto max-w-6xl text-center">
-              <div className="inline-flex rounded-sm border border-emerald-400/35 bg-emerald-400/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-300" data-gsap-item>
-                Not Just Jobs
-              </div>
-              <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]" data-gsap-item>
-                We Also Support Builders.
-              </h2>
-
-              <div className="mt-10 grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-8" data-gsap-item>
-                {builderItems.map((item) => {
-                  const Icon = builderIconMap[item.iconName] || Rocket;
-                  return (
-                    <div
-                      key={item.title}
-                      style={{
-                        boxShadow:
-                          '0px 33.35px 67.61px 0px rgba(80, 154, 129, 0.15) inset, 0px 3.61px 6.31px 0px rgba(0, 0, 0, 0.05), 0px 3.61px 3.61px 0px rgba(0, 0, 0, 0.1), 0px 3.61px 3.61px 0px rgba(0, 0, 0, 0.05)',
-                        backdropFilter: 'blur(20.6px)',
-                        background:
-                          'radial-gradient(64% 90% at 50% 8%, rgba(80, 164, 109, 0.1) 0%, rgba(8, 8, 8, 0.26) 58%, rgba(7, 7, 7, 0.36) 100%)',
-                      }}
-                      className="flex min-h-[180px] flex-col items-center justify-center rounded-3xl border border-[#4E4A48] p-4 text-center"
-                    >
-                      <Icon className="mb-7 h-11 w-11 text-[#50A46D] drop-shadow-[0px_0px_10px_#50A46D] sm:h-14 sm:w-14" strokeWidth={1.5} />
-                      <h3 className="whitespace-pre-line text-xl leading-tight text-white/75 sm:text-[1.6rem]">
-                        {item.title}
-                      </h3>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        ) : null}
-
-        <section className="relative z-10 mt-24 px-4 md:px-8" data-gsap-section data-motion="left">
-          <div className="mx-auto max-w-6xl text-center">
-            <div className="inline-flex rounded-sm border border-emerald-400/35 bg-emerald-400/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-300" data-gsap-item>
-              Certification
-            </div>
-            <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]" data-gsap-item>
-              Get Certified with Recognized Validation
-            </h2>
-          </div>
-
-          <div className="mx-auto mt-8 flex max-w-6xl flex-col-reverse gap-10 rounded-2xl border border-[#302C2A] p-8 lg:flex-row lg:p-14">
-            <div className="lg:w-[45%]" data-gsap-item>
-              <h3 className="text-5xl font-semibold leading-[1.15] md:text-6xl">
-                Earn Certificate of <span className="text-emerald-400">Completion</span>
-              </h3>
-
-              <div className="mt-8 space-y-6">
-                {certificatePoints.map((item) => (
-                  <div key={item} className="flex items-start gap-3">
-                    <span className="mt-3 h-2 w-2 rounded-full bg-emerald-500/75" />
-                    <p className="text-lg text-white/65">{item}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="relative flex justify-end lg:w-[55%]" data-gsap-item data-gsap-media>
-              <img
-                src={`${CLOUD_BASE}/courses/jobready3certificate.webp`}
-                alt="Certificate"
-                className="h-full w-[95%] rounded-lg object-contain opacity-95"
-              />
-            </div>
-          </div>
-        </section>
-
-        {mentorShowcase.length > 0 ? (
-          <section className="relative z-10 mt-24 px-4 md:px-8" data-gsap-section data-motion="hero">
-            <div className="mx-auto max-w-6xl text-center">
-              <div className="inline-flex rounded-sm border border-emerald-400/35 bg-emerald-400/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-300" data-gsap-item>
-                Our Team
-              </div>
-              <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]" data-gsap-item>
-                Meet the experts behind your success!
-              </h2>
             </div>
             <div data-gsap-item>
-              <MentorCarousel
-                key={`mentor-carousel-${associatedMentorIndex}-${mentorShowcase.length}`}
-                mentors={mentorShowcase}
-                initialActive={associatedMentorIndex}
+              <div className="flex flex-wrap gap-2">
+                {derived.topics.map((topic) => (
+                  <span
+                    key={topic.slug || topic.name}
+                    className="rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 text-sm text-white/68"
+                  >
+                    {topic.name}
+                  </span>
+                ))}
+              </div>
+              {derived.audienceCards.length > 0 ? (
+                <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                  {derived.audienceCards.map((item) => {
+                    const Icon = getIcon(item.iconName, Users);
+                    return (
+                      <div key={item.title} className="rounded-2xl border border-white/10 bg-[#0b0d0c] p-5">
+                        <Icon className="h-5 w-5 text-emerald-300" />
+                        <h3 className="mt-4 text-base font-semibold text-white">{item.title}</h3>
+                        {item.description ? <p className="mt-2 text-sm leading-6 text-white/52">{item.description}</p> : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </section>
+
+        <section id="syllabus" className="relative z-10 px-4 pt-24 sm:px-6 lg:px-8" data-gsap-section data-motion="up">
+          <div className="mx-auto max-w-7xl">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between" data-gsap-item>
+              <SectionHeading
+                eyebrow="Syllabus"
+                title="Levels, lessons, tests, and progress checkpoints."
+                body={`${pluralize(derived.syllabus?.lessonCount || 0, 'lesson')} across ${pluralize(derived.syllabus?.moduleCount || 0, 'level')}, with ${pluralize(derived.syllabus?.quizCount || 0, 'test')}.`}
               />
+              <div className="rounded-2xl border border-emerald-300/20 bg-emerald-400/10 px-5 py-4 text-sm text-emerald-100">
+                <span className="font-semibold">{formatNumber(derived.syllabus?.totalXp || 0)} XP</span>
+                <span className="text-emerald-100/55"> available</span>
+              </div>
+            </div>
+
+            <div className="mt-8 space-y-4" data-gsap-item>
+              {course.curriculum.length > 0 ? (
+                course.curriculum.map((module, index) => (
+                  <SyllabusLevel
+                    key={`${module.title}-${index}`}
+                    module={module}
+                    index={index}
+                    isOpen={openModule === index}
+                    onToggle={() => setOpenModule(openModule === index ? -1 : index)}
+                  />
+                ))
+              ) : (
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-8 text-sm text-white/55">
+                  Curriculum modules will appear here once the mentor publishes them.
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section id="certificate" className="relative z-10 px-4 pt-24 sm:px-6 lg:px-8" data-gsap-section data-motion="right">
+          <div className="mx-auto grid max-w-7xl gap-8 rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_20%_10%,rgba(16,185,129,0.16),transparent_48%),#090b0a] p-6 sm:p-8 lg:grid-cols-[0.58fr_0.42fr]" data-gsap-item>
+            <div>
+              <SectionHeading
+                eyebrow="Certificate"
+                title="Showcase completion with proof of studied skills."
+                body="Certificates are tied to the course completion flow, so learners have a clear reason to finish every level."
+              />
+              <div className="mt-7 space-y-4">
+                {certificatePoints.map((point) => (
+                  <div key={point} className="flex gap-3 text-sm leading-6 text-white/64">
+                    <CircleCheck className="mt-1 h-4 w-4 shrink-0 text-emerald-300" />
+                    <p>{point}</p>
+                  </div>
+                ))}
+              </div>
+              <a
+                href={enrollmentHref}
+                className="mt-8 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-400 px-5 text-sm font-semibold text-black transition hover:bg-emerald-300"
+              >
+                Start course
+                <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+            <div className="relative min-h-[260px] overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035] p-5">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(16,185,129,0.22),transparent_45%)]" />
+              <div className="relative flex h-full min-h-[240px] flex-col justify-between rounded-xl border border-white/10 bg-black/60 p-6">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.22em] text-emerald-300/80">Certificate of completion</p>
+                  <h3 className="mt-4 text-2xl font-semibold text-white">{course.title}</h3>
+                </div>
+                <div>
+                  <p className="text-sm text-white/50">Issued by Design School</p>
+                  <p className="mt-2 text-sm text-white/68">{mentor.name || 'Course Mentor'}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="instructor" className="relative z-10 px-4 pt-24 sm:px-6 lg:px-8" data-gsap-section data-motion="left">
+          <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[0.32fr_0.68fr]">
+            <div className="overflow-hidden rounded-3xl border border-white/10 bg-[#0b0d0c]" data-gsap-item>
+              {mentor.photo ? (
+                <img src={mentor.photo} alt={mentor.name || 'Course mentor'} className="aspect-[4/5] w-full object-cover" />
+              ) : (
+                <div className="flex aspect-[4/5] items-center justify-center bg-[radial-gradient(circle_at_50%_25%,rgba(16,185,129,0.24),transparent_55%)]">
+                  <UserRound className="h-16 w-16 text-emerald-300/70" />
+                </div>
+              )}
+            </div>
+            <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 sm:p-8" data-gsap-item>
+              <SectionHeading
+                eyebrow="Meet your instructor"
+                title={mentor.name || 'Design School Mentor'}
+                body={mentor.role || 'Course mentor'}
+              />
+              <p className="mt-6 max-w-3xl text-base leading-8 text-white/62">
+                Learn with a mentor-led structure that connects lessons, practical tasks, feedback, progress, and certificate readiness in one guided experience.
+              </p>
+              {mentor.company ? <p className="mt-5 text-sm text-white/45">Currently at {mentor.company}</p> : null}
+            </div>
+          </div>
+        </section>
+
+        <section id="reviews" className="relative z-10 px-4 pt-24 sm:px-6 lg:px-8" data-gsap-section data-motion="up">
+          <div className="mx-auto max-w-7xl">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between" data-gsap-item>
+              <SectionHeading
+                eyebrow="Reviews"
+                title="Loved by learners building serious skills."
+                body="Reviews come from the backend review system and update as students submit feedback."
+              />
+              <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-5 py-4">
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4 fill-emerald-300 text-emerald-300" />
+                  <span className="text-xl font-semibold text-white">
+                    {derived.reviewAverage ? derived.reviewAverage.toFixed(1) : 'New'}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-white/45">{formatNumber(derived.reviewCount)} ratings</p>
+              </div>
+            </div>
+
+            <div className="mt-8 grid gap-4 md:grid-cols-2" data-gsap-item>
+              {reviews.length > 0 ? (
+                reviews.slice(0, 4).map((review) => (
+                  <div key={review.id || review.comment} className="rounded-2xl border border-white/10 bg-[#0b0d0c] p-5">
+                    <div className="flex items-center gap-1 text-emerald-300">
+                      {Array.from({ length: review.rating || 5 }).map((_, index) => (
+                        <Star key={index} className="h-3.5 w-3.5 fill-current" />
+                      ))}
+                    </div>
+                    <p className="mt-4 text-sm leading-7 text-white/62">{review.comment}</p>
+                    <p className="mt-5 text-sm font-semibold text-white">{review.studentName || 'Design School learner'}</p>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-white/10 bg-[#0b0d0c] p-8 text-sm text-white/55 md:col-span-2">
+                  Reviews will appear here after enrolled students submit course feedback.
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {course.relatedCourses.length > 0 ? (
+          <section className="relative z-10 px-4 pt-24 sm:px-6 lg:px-8" data-gsap-section data-motion="up">
+            <div className="mx-auto max-w-7xl">
+              <div className="flex items-end justify-between gap-5" data-gsap-item>
+                <SectionHeading eyebrow="Related courses" title="Keep building the same skill track." />
+                <Link to="/courses" className="hidden text-sm font-semibold text-emerald-300 hover:text-emerald-200 sm:block">
+                  View all
+                </Link>
+              </div>
+              <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-gsap-item>
+                {course.relatedCourses.map((item) => (
+                  <Link
+                    key={item.id || item.slug}
+                    to={item.href}
+                    className="group overflow-hidden rounded-2xl border border-white/10 bg-[#0b0d0c] transition hover:-translate-y-1 hover:border-emerald-300/35"
+                  >
+                    <img src={item.thumbnail} alt={item.title} className="aspect-[16/10] w-full object-cover opacity-90 transition group-hover:opacity-100" />
+                    <div className="p-4">
+                      <p className="text-sm font-semibold text-white">{item.title}</p>
+                      <p className="mt-2 line-clamp-2 text-xs leading-5 text-white/50">{item.description}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
           </section>
         ) : null}
 
         {course.faqs.length > 0 ? (
-          <section className="relative z-10 mt-24 px-4 pb-20 md:px-8" data-gsap-section data-motion="up">
-            <div className="mx-auto max-w-5xl text-center">
-              <div className="inline-flex rounded-sm border border-emerald-400/35 bg-emerald-400/10 px-5 py-2 text-xs uppercase tracking-[0.24em] text-emerald-300" data-gsap-item>
-                Faqs
+          <section id="faqs" className="relative z-10 px-4 pt-24 sm:px-6 lg:px-8" data-gsap-section data-motion="up">
+            <div className="mx-auto max-w-4xl">
+              <div data-gsap-item>
+                <SectionHeading
+                  eyebrow="FAQs"
+                  title="Answers before learners commit."
+                  body="Keep this section practical: pricing, required skill level, certificate rules, and schedule expectations."
+                />
               </div>
-              <h2 className="mx-auto mt-6 max-w-4xl text-[2rem] font-medium leading-[1.2] md:text-[3.2rem]" data-gsap-item>
-                Frequently Asked Questions From our Students
-              </h2>
-            </div>
-
-            <div className="mx-auto mt-8 flex max-w-5xl flex-col gap-4" data-gsap-item>
-              {course.faqs.map((faq, index) => {
-                const isOpen = openFaq === index;
-                return (
-                  <div
-                    key={`${faq.que}-${index}`}
-                    className="overflow-hidden rounded-2xl border border-[#2A2D30] bg-[#000205]"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setOpenFaq(isOpen ? -1 : index)}
-                      className="flex w-full items-center justify-between gap-4 p-5 text-left md:p-6"
-                    >
-                      <span
-                        className={`text-xl transition-colors md:text-2xl ${
-                          isOpen ? 'text-[#E9E9E9]/90' : 'text-[#E9E9E9]/50'
-                        }`}
+              <div className="mt-8 space-y-3" data-gsap-item>
+                {course.faqs.map((faq, index) => {
+                  const isOpen = openFaq === index;
+                  return (
+                    <div key={`${faq.que}-${index}`} className="overflow-hidden rounded-2xl border border-white/10 bg-[#0b0d0c]">
+                      <button
+                        type="button"
+                        onClick={() => setOpenFaq(isOpen ? -1 : index)}
+                        className="flex w-full items-center justify-between gap-4 p-5 text-left"
                       >
-                        {faq.que}
-                      </span>
-                      <ChevronDown
-                        className={`h-8 w-8 text-white transition-all duration-300 ${
-                          isOpen ? 'rotate-180 opacity-100' : 'opacity-70'
-                        }`}
-                      />
-                    </button>
-
-                    <AnimatePresence initial={false}>
-                      {isOpen ? (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.25, ease: 'easeInOut' }}
-                          className="overflow-hidden"
-                        >
-                          <p className="px-5 pb-5 text-lg text-[#FFFFFF99]/80 md:px-6 md:pb-6">
-                            {faq.ans}
-                          </p>
-                        </motion.div>
-                      ) : null}
-                    </AnimatePresence>
-                  </div>
-                );
-              })}
+                        <span className="text-sm font-semibold text-white sm:text-base">{faq.que}</span>
+                        <ChevronDown className={`h-5 w-5 shrink-0 text-white/50 transition ${isOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {isOpen ? (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.22, ease: 'easeInOut' }}
+                            className="overflow-hidden"
+                          >
+                            <p className="border-t border-white/8 px-5 py-5 text-sm leading-7 text-white/56">{faq.ans}</p>
+                          </motion.div>
+                        ) : null}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </section>
         ) : null}
@@ -951,31 +814,17 @@ const CourseDetail = () => {
       <Footer />
 
       <div
-        className={`fixed bottom-0 left-1/2 z-[9999] w-full -translate-x-1/2 bg-[#1b1b1b] p-4 transition-all duration-300 md:bottom-5 md:w-max md:rounded-lg md:p-5 ${
-          showStickyCta ? 'pointer-events-auto visible opacity-100' : 'pointer-events-none invisible opacity-0'
+        className={`fixed inset-x-0 bottom-0 z-[90] border-t border-white/10 bg-black/85 px-4 py-3 backdrop-blur-xl transition duration-300 md:hidden ${
+          showStickyCta ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
         }`}
       >
-        <div className="flex flex-col gap-3 md:flex-row md:gap-4">
-          <a
-            href="/#courses"
-            className="hidden items-center justify-center rounded-lg border border-white/40 px-6 py-3 text-lg text-white md:flex"
-          >
-            Courses
-          </a>
-          <a
-            href="/request-callback"
-            className="rounded-lg border border-white/40 px-6 py-3 text-lg text-white"
-          >
-            Request Callback
-          </a>
-          <a
-            href={enrollmentHref}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[linear-gradient(95deg,#169254_6%,#052f1f_235%)] px-6 py-3 text-lg font-semibold text-white"
-          >
-            Join Course Now
-            <ArrowRight className="h-5 w-5" />
-          </a>
-        </div>
+        <a
+          href={enrollmentHref}
+          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-400 px-5 text-sm font-semibold text-black"
+        >
+          Start course
+          <ArrowRight className="h-4 w-4" />
+        </a>
       </div>
     </div>
   );

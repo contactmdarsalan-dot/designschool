@@ -7,18 +7,22 @@ from .models import (
     Badge,
     Category,
     Course,
+    CourseAudienceItem,
     CourseBuilderItem,
     CourseCertificatePoint,
     CourseComparisonPoint,
+    CourseDetailFact,
     CourseFAQ,
     CourseMentorSpotlight,
     CourseModule,
     CourseModulePoint,
     CourseProgress,
     CourseReview,
+    CourseSkillOutcome,
     CourseTag,
     CourseTechnologyCategory,
     CourseTechnologyItem,
+    CourseTopic,
     DailyStreak,
     LearningEvent,
     LearningPath,
@@ -96,6 +100,31 @@ class WhoIsForSerializer(serializers.ModelSerializer):
     class Meta:
         model = WhoIsFor
         fields = ('id', 'text')
+
+
+class CourseDetailFactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CourseDetailFact
+        fields = ('id', 'label', 'value', 'description', 'icon_name', 'sort_order')
+
+
+class CourseSkillOutcomeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CourseSkillOutcome
+        fields = ('id', 'title', 'description', 'icon_name', 'sort_order')
+
+
+class CourseTopicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CourseTopic
+        fields = ('id', 'name', 'slug', 'sort_order')
+        read_only_fields = ('id', 'slug')
+
+
+class CourseAudienceItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CourseAudienceItem
+        fields = ('id', 'title', 'description', 'icon_name', 'sort_order')
 
 
 class CourseTagSerializer(serializers.ModelSerializer):
@@ -488,6 +517,10 @@ class CourseSerializer(serializers.ModelSerializer):
     learning_points = WhatYouWillLearnSerializer(many=True, required=False)
     requirements = RequirementSerializer(many=True, required=False)
     target_audience = WhoIsForSerializer(many=True, required=False)
+    detail_facts = CourseDetailFactSerializer(many=True, required=False)
+    skill_outcomes = CourseSkillOutcomeSerializer(many=True, required=False)
+    topics = CourseTopicSerializer(many=True, required=False)
+    audience_items = CourseAudienceItemSerializer(many=True, required=False)
     tags = CourseTagSerializer(many=True, required=False)
     faqs = CourseFAQSerializer(many=True, required=False)
     modules = CourseModuleSerializer(many=True, required=False)
@@ -506,6 +539,10 @@ class CourseSerializer(serializers.ModelSerializer):
         'learning_points',
         'requirements',
         'target_audience',
+        'detail_facts',
+        'skill_outcomes',
+        'topics',
+        'audience_items',
         'tags',
         'faqs',
         'modules',
@@ -606,6 +643,14 @@ class CourseSerializer(serializers.ModelSerializer):
             self._replace_text_items(course, 'requirements', Requirement, nested_data['requirements'])
         if nested_data.get('target_audience') is not None:
             self._replace_text_items(course, 'target_audience', WhoIsFor, nested_data['target_audience'])
+        if nested_data.get('detail_facts') is not None:
+            self._replace_sorted_items(course, 'detail_facts', CourseDetailFact, nested_data['detail_facts'])
+        if nested_data.get('skill_outcomes') is not None:
+            self._replace_sorted_items(course, 'skill_outcomes', CourseSkillOutcome, nested_data['skill_outcomes'])
+        if nested_data.get('topics') is not None:
+            self._replace_sorted_items(course, 'topics', CourseTopic, nested_data['topics'])
+        if nested_data.get('audience_items') is not None:
+            self._replace_sorted_items(course, 'audience_items', CourseAudienceItem, nested_data['audience_items'])
         if nested_data.get('tags') is not None:
             self._replace_sorted_items(course, 'tags', CourseTag, nested_data['tags'])
         if nested_data.get('faqs') is not None:
