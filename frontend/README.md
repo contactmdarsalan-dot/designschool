@@ -1,16 +1,75 @@
-# React + Vite
+# Design School Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React/Vite single-page app for the Design School learning platform. The UI is built around a Tech-Noir course discovery experience, protected student/admin workspaces, and an interactive lesson room with progress, quizzes, and XP feedback.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- React 19
+- Vite 8
+- Tailwind CSS 4
+- React Router
+- Framer Motion and GSAP
+- Lucide React icons
 
-## React Compiler
+## Local Setup
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+npm run dev
+```
 
-## Expanding the ESLint configuration
+The app runs on `http://127.0.0.1:5173` by default.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Environment
+
+Create `frontend/.env.local` when you need to override the API target:
+
+```bash
+VITE_API_BASE_URL=http://127.0.0.1:8000/api/v1
+```
+
+When no value is provided, development uses the local Django API and production uses the Render API configured in `src/lib/api.js`.
+
+## Main Routes
+
+- `/` - marketing homepage
+- `/courses` - backend-powered course discovery
+- `/courses/:id` - course detail page
+- `/learn/:id` - lesson player, quiz checkpoint, progress, and XP UI
+- `/paths` - learning path discovery grouped from published courses
+- `/blog` and `/blog/:slug` - blog listing and detail
+- `/free-resources` and `/free-resources/:id` - public resources
+- `/dashboard/*` - protected student workspace
+- `/admin-panel` - protected admin workspace
+- `/instructor-panel` - protected mentor workspace
+- `/login`, `/register`, `/verify-phone` - auth flows
+
+## Project Structure
+
+```text
+src/
+  components/
+    sheryians/        Shared public-site components such as Navbar and Footer
+    student/          Student dashboard UI pieces
+  lib/                API client, auth helpers, normalization utilities
+  pages/              Route-level pages, lazy-loaded from App.jsx
+  data/               Static fallback/reference data
+```
+
+## API Contract
+
+The frontend talks to the Django REST API under `/api/v1/`.
+
+Important frontend consumers:
+
+- `src/lib/api.js` centralizes base URL and authenticated fetch behavior.
+- `src/lib/auth.js` stores JWT session state and role helpers.
+- `src/lib/courseContent.js` normalizes public course payloads for cards, detail pages, paths, and lesson rooms.
+
+## Build
+
+```bash
+npm run build
+```
+
+Vercel should use the `frontend` directory as the project root and run the same build command.

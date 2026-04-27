@@ -110,6 +110,19 @@ class PublicCourseApiTests(APITestCase):
         self.assertEqual(payload[0]['title'], design_course.title)
         self.assertEqual(payload[0]['category']['slug'], design_category.slug)
 
+    def test_course_recommendations_return_public_course_cards(self):
+        featured = self.create_course(title='Recommended UX Track', is_featured=True)
+        self.create_course(title='Draft Track', is_published=False)
+
+        response = self.client.get(reverse('course_recommendations'), {'limit': 4})
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()['data']['courses']
+        self.assertEqual(len(payload), 1)
+        self.assertEqual(payload[0]['title'], featured.title)
+        self.assertIn('ratingAvg', payload[0])
+        self.assertIn('ratingCount', payload[0])
+
     def test_public_course_detail_keeps_requirements_separate_from_curriculum(self):
         course = self.create_course(title='Structured Course')
         Requirement.objects.create(course=course, text='Laptop')

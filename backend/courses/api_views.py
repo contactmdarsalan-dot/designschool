@@ -8,10 +8,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Category, Course, CourseReview, Lesson, LessonProgress, Quiz
+from .public_serializers import PublicCourseListSerializer
 from .serializers import CategorySerializer, CourseSerializer, CourseReviewSerializer
 from .services.enrollment_service import user_has_verified_enrollment
 from .services.progress_service import mark_lesson_completed, mark_lesson_started, recompute_course_progress
 from .services.quiz_service import submit_quiz_attempt
+from .services.recommendation_service import get_recommended_courses_for_user
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -132,6 +134,20 @@ class CourseProgressView(APIView):
 
         course = get_object_or_404(Course.objects.filter(query), is_published=True)
         return Response({'data': serialize_course_progress(request.user, course)})
+
+
+class CourseRecommendationView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        try:
+            limit = min(12, max(1, int(request.query_params.get('limit', 6))))
+        except (TypeError, ValueError):
+            limit = 6
+
+        courses = get_recommended_courses_for_user(request.user, limit=limit)
+        serializer = PublicCourseListSerializer(courses, many=True, context={'request': request})
+        return Response({'data': {'courses': serializer.data}})
 
 
 class LessonStartView(APIView):

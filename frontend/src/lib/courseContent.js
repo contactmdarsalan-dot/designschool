@@ -70,6 +70,8 @@ export const normalizeCourseCard = (course) => {
     price,
     salePrice,
     discount,
+    ratingAvg: Number(course?.ratingAvg ?? course?.rating_avg ?? 0),
+    ratingCount: Number(course?.ratingCount ?? course?.rating_count ?? 0),
     isFeatured: Boolean(course?.isFeatured),
     featuredCard: {
       eyebrow: course?.featuredCard?.eyebrow || 'Featured Program',

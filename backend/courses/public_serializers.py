@@ -159,6 +159,8 @@ class PublicCourseListSerializer(serializers.ModelSerializer):
     isFeatured = serializers.BooleanField(source='is_featured')
     featuredOrder = serializers.IntegerField(source='featured_order')
     featuredCard = serializers.SerializerMethodField()
+    ratingAvg = serializers.SerializerMethodField()
+    ratingCount = serializers.IntegerField(source='rating_count')
     category = serializers.SerializerMethodField()
     metaData = serializers.SerializerMethodField()
 
@@ -186,6 +188,8 @@ class PublicCourseListSerializer(serializers.ModelSerializer):
             'isFeatured',
             'featuredOrder',
             'featuredCard',
+            'ratingAvg',
+            'ratingCount',
             'category',
             'metaData',
         )
@@ -242,6 +246,9 @@ class PublicCourseListSerializer(serializers.ModelSerializer):
             'certificationValue': 'Yes' if obj.certificate_available else 'No',
             'certificationLabel': 'Certified',
         }
+
+    def get_ratingAvg(self, obj):
+        return float(obj.rating_avg or 0)
 
     def get_category(self, obj):
         if not obj.category:
