@@ -7,9 +7,55 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Category, Course, CourseReview, LearningPath, Lesson, LessonProgress, Quiz
+from .models import (
+    Badge,
+    Category,
+    Course,
+    CourseModule,
+    CourseProgress,
+    CourseReview,
+    DailyStreak,
+    LearningEvent,
+    LearningPath,
+    LearningPathCourse,
+    Lesson,
+    LessonContentBlock,
+    LessonProgress,
+    Option,
+    Question,
+    Quiz,
+    QuizAttempt,
+    Skill,
+    UserBadge,
+    UserLearningPathProgress,
+    UserSkillProgress,
+    XPTransaction,
+)
 from .public_serializers import PublicCourseListSerializer
-from .serializers import CategorySerializer, CourseSerializer, CourseReviewSerializer
+from .serializers import (
+    BadgeAdminSerializer,
+    CategorySerializer,
+    CourseModuleAdminSerializer,
+    CourseProgressAdminSerializer,
+    CourseReviewSerializer,
+    CourseSerializer,
+    DailyStreakAdminSerializer,
+    LearningEventAdminSerializer,
+    LearningPathAdminSerializer,
+    LearningPathCourseAdminSerializer,
+    LessonAdminSerializer,
+    LessonContentBlockAdminSerializer,
+    LessonProgressAdminSerializer,
+    OptionAdminSerializer,
+    QuestionAdminSerializer,
+    QuizAdminSerializer,
+    QuizAttemptAdminSerializer,
+    SkillAdminSerializer,
+    UserBadgeAdminSerializer,
+    UserLearningPathProgressAdminSerializer,
+    UserSkillProgressAdminSerializer,
+    XPTransactionAdminSerializer,
+)
 from .services.enrollment_service import user_has_verified_enrollment
 from .services.gamification_service import get_gamification_summary
 from .services.learning_path_service import (
@@ -93,6 +139,132 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
         if not self.request.user.is_staff and instance.student_id != self.request.user.id:
             raise PermissionDenied('You can only delete your own review.')
         instance.delete()
+
+
+class AdminOnlyModelViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAdminUser]
+
+
+class CourseModuleViewSet(AdminOnlyModelViewSet):
+    serializer_class = CourseModuleAdminSerializer
+    queryset = CourseModule.objects.select_related('course').order_by('course__title', 'sort_order', 'id')
+
+
+class LessonViewSet(AdminOnlyModelViewSet):
+    serializer_class = LessonAdminSerializer
+    queryset = Lesson.objects.select_related('module', 'module__course').order_by(
+        'module__course__title',
+        'module__sort_order',
+        'sort_order',
+        'id',
+    )
+
+
+class LessonContentBlockViewSet(AdminOnlyModelViewSet):
+    serializer_class = LessonContentBlockAdminSerializer
+    queryset = LessonContentBlock.objects.select_related('lesson', 'lesson__module').order_by(
+        'lesson__module__course__title',
+        'lesson__module__sort_order',
+        'lesson__sort_order',
+        'sort_order',
+        'id',
+    )
+
+
+class QuizViewSet(AdminOnlyModelViewSet):
+    serializer_class = QuizAdminSerializer
+    queryset = Quiz.objects.select_related('lesson', 'lesson__module', 'lesson__module__course').order_by(
+        'lesson__module__course__title',
+        'lesson__module__sort_order',
+        'lesson__sort_order',
+        'id',
+    )
+
+
+class QuestionViewSet(AdminOnlyModelViewSet):
+    serializer_class = QuestionAdminSerializer
+    queryset = Question.objects.select_related('quiz').order_by('quiz__title', 'sort_order', 'id')
+
+
+class OptionViewSet(AdminOnlyModelViewSet):
+    serializer_class = OptionAdminSerializer
+    queryset = Option.objects.select_related('question', 'question__quiz').order_by(
+        'question__quiz__title',
+        'question__sort_order',
+        'sort_order',
+        'id',
+    )
+
+
+class QuizAttemptViewSet(AdminOnlyModelViewSet):
+    serializer_class = QuizAttemptAdminSerializer
+    queryset = QuizAttempt.objects.select_related('user', 'quiz').order_by('-started_at')
+
+
+class LessonProgressViewSet(AdminOnlyModelViewSet):
+    serializer_class = LessonProgressAdminSerializer
+    queryset = LessonProgress.objects.select_related('user', 'lesson', 'lesson__module', 'lesson__module__course').order_by(
+        '-last_seen_at',
+    )
+
+
+class CourseProgressViewSet(AdminOnlyModelViewSet):
+    serializer_class = CourseProgressAdminSerializer
+    queryset = CourseProgress.objects.select_related('user', 'course').order_by('-updated_at')
+
+
+class XPTransactionViewSet(AdminOnlyModelViewSet):
+    serializer_class = XPTransactionAdminSerializer
+    queryset = XPTransaction.objects.select_related('user', 'course', 'lesson').order_by('-created_at')
+
+
+class BadgeViewSet(AdminOnlyModelViewSet):
+    serializer_class = BadgeAdminSerializer
+    queryset = Badge.objects.all().order_by('xp_threshold', 'name')
+
+
+class UserBadgeViewSet(AdminOnlyModelViewSet):
+    serializer_class = UserBadgeAdminSerializer
+    queryset = UserBadge.objects.select_related('user', 'badge').order_by('-awarded_at')
+
+
+class DailyStreakViewSet(AdminOnlyModelViewSet):
+    serializer_class = DailyStreakAdminSerializer
+    queryset = DailyStreak.objects.select_related('user').order_by('-updated_at')
+
+
+class SkillViewSet(AdminOnlyModelViewSet):
+    serializer_class = SkillAdminSerializer
+    queryset = Skill.objects.prefetch_related('courses').order_by('name')
+
+
+class UserSkillProgressViewSet(AdminOnlyModelViewSet):
+    serializer_class = UserSkillProgressAdminSerializer
+    queryset = UserSkillProgress.objects.select_related('user', 'skill').order_by('-updated_at')
+
+
+class LearningPathViewSet(AdminOnlyModelViewSet):
+    serializer_class = LearningPathAdminSerializer
+    queryset = LearningPath.objects.all().order_by('-created_at')
+
+
+class LearningPathCourseViewSet(AdminOnlyModelViewSet):
+    serializer_class = LearningPathCourseAdminSerializer
+    queryset = LearningPathCourse.objects.select_related('learning_path', 'course').order_by(
+        'learning_path__title',
+        'sort_order',
+        'id',
+    )
+
+
+class UserLearningPathProgressViewSet(AdminOnlyModelViewSet):
+    serializer_class = UserLearningPathProgressAdminSerializer
+    queryset = UserLearningPathProgress.objects.select_related('user', 'learning_path').order_by('-updated_at')
+
+
+class LearningEventViewSet(AdminOnlyModelViewSet):
+    serializer_class = LearningEventAdminSerializer
+    queryset = LearningEvent.objects.select_related('user', 'course', 'lesson').order_by('-created_at')
 
 
 def serialize_course_progress(user, course):

@@ -4,6 +4,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from .models import (
+    Badge,
     Category,
     Course,
     CourseBuilderItem,
@@ -13,15 +14,30 @@ from .models import (
     CourseMentorSpotlight,
     CourseModule,
     CourseModulePoint,
+    CourseProgress,
     CourseReview,
     CourseTag,
     CourseTechnologyCategory,
     CourseTechnologyItem,
+    DailyStreak,
+    LearningEvent,
+    LearningPath,
+    LearningPathCourse,
     Lesson,
     LessonContentBlock,
+    LessonProgress,
+    Option,
+    Question,
+    Quiz,
+    QuizAttempt,
     Requirement,
+    Skill,
+    UserBadge,
+    UserLearningPathProgress,
+    UserSkillProgress,
     WhatYouWillLearn,
     WhoIsFor,
+    XPTransaction,
 )
 
 
@@ -181,6 +197,288 @@ class CourseReviewSerializer(serializers.ModelSerializer):
         model = CourseReview
         fields = ('id', 'course', 'student', 'student_name', 'rating', 'comment', 'created_at')
         read_only_fields = ('id', 'student', 'student_name', 'created_at')
+
+
+class CourseModuleAdminSerializer(serializers.ModelSerializer):
+    course_title = serializers.CharField(source='course.title', read_only=True)
+
+    class Meta:
+        model = CourseModule
+        fields = ('id', 'course', 'course_title', 'title', 'description', 'sort_order')
+
+
+class LessonAdminSerializer(serializers.ModelSerializer):
+    module_title = serializers.CharField(source='module.title', read_only=True)
+    course_title = serializers.CharField(source='module.course.title', read_only=True)
+
+    class Meta:
+        model = Lesson
+        fields = (
+            'id',
+            'module',
+            'module_title',
+            'course_title',
+            'title',
+            'slug',
+            'summary',
+            'lesson_type',
+            'estimated_minutes',
+            'xp_reward',
+            'is_preview',
+            'is_published',
+            'sort_order',
+        )
+        read_only_fields = ('id', 'slug', 'module_title', 'course_title')
+
+
+class LessonContentBlockAdminSerializer(serializers.ModelSerializer):
+    lesson_title = serializers.CharField(source='lesson.title', read_only=True)
+    module_title = serializers.CharField(source='lesson.module.title', read_only=True)
+
+    class Meta:
+        model = LessonContentBlock
+        fields = (
+            'id',
+            'lesson',
+            'lesson_title',
+            'module_title',
+            'block_type',
+            'title',
+            'body',
+            'media_url',
+            'sort_order',
+        )
+
+
+class QuizAdminSerializer(serializers.ModelSerializer):
+    lesson_title = serializers.CharField(source='lesson.title', read_only=True)
+    course_title = serializers.CharField(source='lesson.module.course.title', read_only=True)
+
+    class Meta:
+        model = Quiz
+        fields = (
+            'id',
+            'lesson',
+            'lesson_title',
+            'course_title',
+            'title',
+            'passing_score',
+            'xp_reward',
+            'max_attempts',
+            'is_published',
+        )
+
+
+class QuestionAdminSerializer(serializers.ModelSerializer):
+    quiz_title = serializers.CharField(source='quiz.title', read_only=True)
+
+    class Meta:
+        model = Question
+        fields = ('id', 'quiz', 'quiz_title', 'prompt', 'question_type', 'explanation', 'sort_order')
+
+
+class OptionAdminSerializer(serializers.ModelSerializer):
+    question_prompt = serializers.CharField(source='question.prompt', read_only=True)
+
+    class Meta:
+        model = Option
+        fields = ('id', 'question', 'question_prompt', 'text', 'is_correct', 'sort_order')
+
+
+class QuizAttemptAdminSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source='user.email', read_only=True)
+    quiz_title = serializers.CharField(source='quiz.title', read_only=True)
+
+    class Meta:
+        model = QuizAttempt
+        fields = (
+            'id',
+            'user',
+            'user_email',
+            'quiz',
+            'quiz_title',
+            'score',
+            'passed',
+            'xp_awarded',
+            'started_at',
+            'completed_at',
+        )
+
+
+class LessonProgressAdminSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source='user.email', read_only=True)
+    lesson_title = serializers.CharField(source='lesson.title', read_only=True)
+    course_title = serializers.CharField(source='lesson.module.course.title', read_only=True)
+
+    class Meta:
+        model = LessonProgress
+        fields = (
+            'id',
+            'user',
+            'user_email',
+            'lesson',
+            'lesson_title',
+            'course_title',
+            'status',
+            'progress_percent',
+            'started_at',
+            'completed_at',
+            'last_seen_at',
+        )
+        read_only_fields = ('last_seen_at',)
+
+
+class CourseProgressAdminSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source='user.email', read_only=True)
+    course_title = serializers.CharField(source='course.title', read_only=True)
+
+    class Meta:
+        model = CourseProgress
+        fields = (
+            'id',
+            'user',
+            'user_email',
+            'course',
+            'course_title',
+            'completed_lessons',
+            'total_lessons',
+            'progress_percent',
+            'xp_earned',
+            'started_at',
+            'completed_at',
+            'updated_at',
+        )
+        read_only_fields = ('updated_at',)
+
+
+class XPTransactionAdminSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source='user.email', read_only=True)
+    course_title = serializers.CharField(source='course.title', read_only=True)
+    lesson_title = serializers.CharField(source='lesson.title', read_only=True)
+
+    class Meta:
+        model = XPTransaction
+        fields = (
+            'id',
+            'user',
+            'user_email',
+            'course',
+            'course_title',
+            'lesson',
+            'lesson_title',
+            'amount',
+            'source',
+            'description',
+            'created_at',
+        )
+        read_only_fields = ('created_at',)
+
+
+class BadgeAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Badge
+        fields = ('id', 'name', 'slug', 'description', 'icon_name', 'xp_threshold', 'is_active')
+        read_only_fields = ('id', 'slug')
+
+
+class UserBadgeAdminSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source='user.email', read_only=True)
+    badge_name = serializers.CharField(source='badge.name', read_only=True)
+
+    class Meta:
+        model = UserBadge
+        fields = ('id', 'user', 'user_email', 'badge', 'badge_name', 'awarded_at')
+        read_only_fields = ('awarded_at',)
+
+
+class DailyStreakAdminSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source='user.email', read_only=True)
+
+    class Meta:
+        model = DailyStreak
+        fields = ('id', 'user', 'user_email', 'current_count', 'longest_count', 'last_activity_date', 'updated_at')
+        read_only_fields = ('updated_at',)
+
+
+class SkillAdminSerializer(serializers.ModelSerializer):
+    course_titles = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Skill
+        fields = ('id', 'name', 'slug', 'description', 'courses', 'course_titles')
+        read_only_fields = ('id', 'slug', 'course_titles')
+
+    def get_course_titles(self, obj):
+        return ', '.join(obj.courses.values_list('title', flat=True))
+
+
+class UserSkillProgressAdminSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source='user.email', read_only=True)
+    skill_name = serializers.CharField(source='skill.name', read_only=True)
+
+    class Meta:
+        model = UserSkillProgress
+        fields = ('id', 'user', 'user_email', 'skill', 'skill_name', 'level', 'xp', 'updated_at')
+        read_only_fields = ('updated_at',)
+
+
+class LearningPathAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LearningPath
+        fields = ('id', 'title', 'slug', 'description', 'is_published', 'created_at')
+        read_only_fields = ('id', 'slug', 'created_at')
+
+
+class LearningPathCourseAdminSerializer(serializers.ModelSerializer):
+    path_title = serializers.CharField(source='learning_path.title', read_only=True)
+    course_title = serializers.CharField(source='course.title', read_only=True)
+
+    class Meta:
+        model = LearningPathCourse
+        fields = ('id', 'learning_path', 'path_title', 'course', 'course_title', 'sort_order', 'required')
+
+
+class UserLearningPathProgressAdminSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source='user.email', read_only=True)
+    path_title = serializers.CharField(source='learning_path.title', read_only=True)
+
+    class Meta:
+        model = UserLearningPathProgress
+        fields = (
+            'id',
+            'user',
+            'user_email',
+            'learning_path',
+            'path_title',
+            'completed_courses',
+            'total_courses',
+            'progress_percent',
+            'started_at',
+            'completed_at',
+            'updated_at',
+        )
+        read_only_fields = ('updated_at',)
+
+
+class LearningEventAdminSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source='user.email', read_only=True)
+    course_title = serializers.CharField(source='course.title', read_only=True)
+    lesson_title = serializers.CharField(source='lesson.title', read_only=True)
+
+    class Meta:
+        model = LearningEvent
+        fields = (
+            'id',
+            'user',
+            'user_email',
+            'course',
+            'course_title',
+            'lesson',
+            'lesson_title',
+            'event_type',
+            'created_at',
+        )
+        read_only_fields = ('created_at',)
 
 
 class CourseSerializer(serializers.ModelSerializer):

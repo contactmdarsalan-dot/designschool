@@ -46,6 +46,12 @@ const RESOURCE_ICONS = {
   mentors: Users,
   categories: BookOpen,
   courses: BookCopy,
+  courseModules: BookOpen,
+  lessons: Brain,
+  lessonBlocks: FileText,
+  quizzes: ClipboardList,
+  questions: CircleAlert,
+  answerOptions: CheckCircle2,
   enrollments: CheckCircle2,
   paymentMethods: ShieldCheck,
   assignments: ClipboardList,
@@ -61,6 +67,19 @@ const RESOURCE_ICONS = {
   freeResources: Globe2,
   siteSettings: Settings2,
   callbackRequests: MessageSquareMore,
+  quizAttempts: ClipboardList,
+  lessonProgress: CheckCircle2,
+  courseProgress: LayoutDashboard,
+  xpTransactions: Star,
+  badges: BadgeCheck,
+  userBadges: FileBadge2,
+  dailyStreaks: CalendarClock,
+  skills: Brain,
+  userSkillProgress: GraduationCap,
+  learningPaths: BookCopy,
+  learningPathCourses: BookOpen,
+  userLearningPathProgress: CheckCircle2,
+  learningEvents: Bell,
 };
 
 const RESOURCE_META = {
@@ -87,6 +106,30 @@ const RESOURCE_META = {
   courses: {
     eyebrow: 'Curriculum',
     description: 'Shape course structure, pricing, presentation, and publishing from a single editorial workspace.',
+  },
+  courseModules: {
+    eyebrow: 'Learning Engine',
+    description: 'Manage course modules that organize lessons, checkpoints, and curriculum sequencing.',
+  },
+  lessons: {
+    eyebrow: 'Learning Engine',
+    description: 'Create lesson-level experiences with preview access, XP rewards, content types, and order control.',
+  },
+  lessonBlocks: {
+    eyebrow: 'Lesson Content',
+    description: 'Build lesson bodies from text, media, callouts, code, and task blocks.',
+  },
+  quizzes: {
+    eyebrow: 'Quiz System',
+    description: 'Configure lesson quizzes, pass marks, attempt limits, and XP rewards.',
+  },
+  questions: {
+    eyebrow: 'Quiz System',
+    description: 'Write quiz prompts, explanations, and question types for interactive assessment.',
+  },
+  answerOptions: {
+    eyebrow: 'Quiz System',
+    description: 'Manage answer options and mark correct choices for each question.',
   },
   enrollments: {
     eyebrow: 'Commerce',
@@ -147,6 +190,58 @@ const RESOURCE_META = {
   callbackRequests: {
     eyebrow: 'Support',
     description: 'Handle inbound callback requests with clear status tracking and response context.',
+  },
+  quizAttempts: {
+    eyebrow: 'Assessment Signals',
+    description: 'Audit learner quiz attempts, scores, pass states, and XP awarded from assessments.',
+  },
+  lessonProgress: {
+    eyebrow: 'Progress Engine',
+    description: 'Inspect lesson-level completion states, timestamps, and learner progress percentages.',
+  },
+  courseProgress: {
+    eyebrow: 'Progress Engine',
+    description: 'Track course completion, earned XP, and learner advancement across full programs.',
+  },
+  xpTransactions: {
+    eyebrow: 'Gamification',
+    description: 'Review and manually manage XP transactions from lessons, quizzes, streaks, and admin actions.',
+  },
+  badges: {
+    eyebrow: 'Gamification',
+    description: 'Create badge milestones with XP thresholds and icon metadata.',
+  },
+  userBadges: {
+    eyebrow: 'Gamification',
+    description: 'Award and audit badges attached to individual learner profiles.',
+  },
+  dailyStreaks: {
+    eyebrow: 'Gamification',
+    description: 'Monitor learner consistency through current streaks, longest streaks, and last activity dates.',
+  },
+  skills: {
+    eyebrow: 'Skill Graph',
+    description: 'Define platform skills that organize learning goals and future recommendations.',
+  },
+  userSkillProgress: {
+    eyebrow: 'Skill Graph',
+    description: 'Track learner skill levels and XP so the platform can show meaningful growth.',
+  },
+  learningPaths: {
+    eyebrow: 'Learning Paths',
+    description: 'Publish guided multi-course paths for career-oriented progression.',
+  },
+  learningPathCourses: {
+    eyebrow: 'Learning Paths',
+    description: 'Sequence courses inside each path and mark required learning milestones.',
+  },
+  userLearningPathProgress: {
+    eyebrow: 'Learning Paths',
+    description: 'Monitor path completion by learner, including course counts and progress percentage.',
+  },
+  learningEvents: {
+    eyebrow: 'Analytics',
+    description: 'View the learning activity stream behind lessons, quizzes, videos, drops, and certificates.',
   },
 };
 
@@ -413,9 +508,9 @@ const formatCurrencyDisplay = (money) => {
   }
 
   const numericValue = Number(money || 0);
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-NP', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'NPR',
     maximumFractionDigits: 2,
   }).format(numericValue);
 };
