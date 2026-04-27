@@ -28,6 +28,7 @@ const normalizeCategoryCard = (category, index) => ({
   description: category.short_description || 'Explore focused programs designed for practical outcomes.',
   image: category.image_url || fallbackImages[index % fallbackImages.length],
   badge: category.badge || (index === 0 ? 'Featured' : ''),
+  iconUrl: category.icon_url || '',
   icon: iconMap[category.icon_name] || iconMap.Brain,
   href: `/courses?category=${category.slug}`,
 });
@@ -76,7 +77,11 @@ const Card = ({ card, index, scrollYProgress }) => {
 
       {/* Icon Overlay */}
       <div className="absolute top-8 left-8 w-14 h-14 bg-black/40 backdrop-blur-xl rounded-2xl flex items-center justify-center border border-white/10 opacity-0 group-hover:opacity-100 transition-all duration-500 z-20">
-         <Icon className="w-6 h-6 text-brand" />
+        {card.iconUrl ? (
+          <img src={card.iconUrl} alt="" className="h-7 w-7 object-contain" />
+        ) : (
+          <Icon className="w-6 h-6 text-brand" />
+        )}
       </div>
 
       {/* Arrow Icon */}

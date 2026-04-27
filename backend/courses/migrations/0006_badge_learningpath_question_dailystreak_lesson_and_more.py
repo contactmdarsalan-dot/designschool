@@ -8,290 +8,690 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('courses', '0005_category_icon'),
+        ("courses", "0005_category_icon"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Badge',
+            name="Badge",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=120, unique=True)),
-                ('slug', models.SlugField(blank=True, max_length=140, unique=True)),
-                ('description', models.CharField(blank=True, max_length=255)),
-                ('icon_name', models.CharField(blank=True, default='Award', max_length=80)),
-                ('xp_threshold', models.PositiveIntegerField(default=0)),
-                ('is_active', models.BooleanField(default=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(max_length=120, unique=True)),
+                ("slug", models.SlugField(blank=True, max_length=140, unique=True)),
+                ("description", models.CharField(blank=True, max_length=255)),
+                ("icon_name", models.CharField(blank=True, default="Award", max_length=80)),
+                ("xp_threshold", models.PositiveIntegerField(default=0)),
+                ("is_active", models.BooleanField(default=True)),
             ],
         ),
         migrations.CreateModel(
-            name='LearningPath',
+            name="LearningPath",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=180)),
-                ('slug', models.SlugField(blank=True, max_length=220, unique=True)),
-                ('description', models.TextField(blank=True)),
-                ('is_published', models.BooleanField(default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("title", models.CharField(max_length=180)),
+                ("slug", models.SlugField(blank=True, max_length=220, unique=True)),
+                ("description", models.TextField(blank=True)),
+                ("is_published", models.BooleanField(default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
         ),
         migrations.CreateModel(
-            name='Question',
+            name="Question",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('prompt', models.TextField()),
-                ('question_type', models.CharField(choices=[('single_choice', 'Single choice'), ('multiple_choice', 'Multiple choice'), ('true_false', 'True / false')], default='single_choice', max_length=20)),
-                ('explanation', models.TextField(blank=True)),
-                ('sort_order', models.PositiveIntegerField(default=0)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("prompt", models.TextField()),
+                (
+                    "question_type",
+                    models.CharField(
+                        choices=[
+                            ("single_choice", "Single choice"),
+                            ("multiple_choice", "Multiple choice"),
+                            ("true_false", "True / false"),
+                        ],
+                        default="single_choice",
+                        max_length=20,
+                    ),
+                ),
+                ("explanation", models.TextField(blank=True)),
+                ("sort_order", models.PositiveIntegerField(default=0)),
             ],
             options={
-                'ordering': ('sort_order', 'id'),
+                "ordering": ("sort_order", "id"),
             },
         ),
         migrations.CreateModel(
-            name='DailyStreak',
+            name="DailyStreak",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('current_count', models.PositiveIntegerField(default=0)),
-                ('longest_count', models.PositiveIntegerField(default=0)),
-                ('last_activity_date', models.DateField(blank=True, null=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='daily_streak', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("current_count", models.PositiveIntegerField(default=0)),
+                ("longest_count", models.PositiveIntegerField(default=0)),
+                ("last_activity_date", models.DateField(blank=True, null=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "user",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="daily_streak",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Lesson',
+            name="Lesson",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=180)),
-                ('slug', models.SlugField(blank=True, max_length=220)),
-                ('summary', models.CharField(blank=True, max_length=300)),
-                ('lesson_type', models.CharField(choices=[('article', 'Article'), ('video', 'Video'), ('interactive', 'Interactive'), ('challenge', 'Challenge'), ('quiz', 'Quiz')], default='article', max_length=20)),
-                ('estimated_minutes', models.PositiveIntegerField(default=8)),
-                ('xp_reward', models.PositiveIntegerField(default=10)),
-                ('is_preview', models.BooleanField(default=False)),
-                ('is_published', models.BooleanField(default=True)),
-                ('sort_order', models.PositiveIntegerField(default=0)),
-                ('module', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='lessons', to='courses.coursemodule')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("title", models.CharField(max_length=180)),
+                ("slug", models.SlugField(blank=True, max_length=220)),
+                ("summary", models.CharField(blank=True, max_length=300)),
+                (
+                    "lesson_type",
+                    models.CharField(
+                        choices=[
+                            ("article", "Article"),
+                            ("video", "Video"),
+                            ("interactive", "Interactive"),
+                            ("challenge", "Challenge"),
+                            ("quiz", "Quiz"),
+                        ],
+                        default="article",
+                        max_length=20,
+                    ),
+                ),
+                ("estimated_minutes", models.PositiveIntegerField(default=8)),
+                ("xp_reward", models.PositiveIntegerField(default=10)),
+                ("is_preview", models.BooleanField(default=False)),
+                ("is_published", models.BooleanField(default=True)),
+                ("sort_order", models.PositiveIntegerField(default=0)),
+                (
+                    "module",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="lessons",
+                        to="courses.coursemodule",
+                    ),
+                ),
             ],
             options={
-                'ordering': ('sort_order', 'id'),
+                "ordering": ("sort_order", "id"),
             },
         ),
         migrations.CreateModel(
-            name='LearningEvent',
+            name="LearningEvent",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('event_type', models.CharField(choices=[('lesson_started', 'Lesson started'), ('lesson_completed', 'Lesson completed'), ('quiz_failed', 'Quiz failed'), ('quiz_passed', 'Quiz passed'), ('video_watched', 'Video watched'), ('course_dropped', 'Course dropped'), ('certificate_issued', 'Certificate issued')], max_length=30)),
-                ('metadata', models.JSONField(blank=True, default=dict)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('course', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='learning_events', to='courses.course')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='learning_events', to=settings.AUTH_USER_MODEL)),
-                ('lesson', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='learning_events', to='courses.lesson')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "event_type",
+                    models.CharField(
+                        choices=[
+                            ("lesson_started", "Lesson started"),
+                            ("lesson_completed", "Lesson completed"),
+                            ("quiz_failed", "Quiz failed"),
+                            ("quiz_passed", "Quiz passed"),
+                            ("video_watched", "Video watched"),
+                            ("course_dropped", "Course dropped"),
+                            ("certificate_issued", "Certificate issued"),
+                        ],
+                        max_length=30,
+                    ),
+                ),
+                ("metadata", models.JSONField(blank=True, default=dict)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "course",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="learning_events",
+                        to="courses.course",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="learning_events",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "lesson",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="learning_events",
+                        to="courses.lesson",
+                    ),
+                ),
             ],
             options={
-                'ordering': ('-created_at',),
+                "ordering": ("-created_at",),
             },
         ),
         migrations.CreateModel(
-            name='LessonContentBlock',
+            name="LessonContentBlock",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('block_type', models.CharField(choices=[('text', 'Text'), ('video', 'Video'), ('image', 'Image'), ('code', 'Code'), ('callout', 'Callout'), ('task', 'Task')], default='text', max_length=20)),
-                ('title', models.CharField(blank=True, max_length=160)),
-                ('body', models.TextField(blank=True)),
-                ('media_url', models.URLField(blank=True)),
-                ('metadata', models.JSONField(blank=True, default=dict)),
-                ('sort_order', models.PositiveIntegerField(default=0)),
-                ('lesson', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='content_blocks', to='courses.lesson')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "block_type",
+                    models.CharField(
+                        choices=[
+                            ("text", "Text"),
+                            ("video", "Video"),
+                            ("image", "Image"),
+                            ("code", "Code"),
+                            ("callout", "Callout"),
+                            ("task", "Task"),
+                        ],
+                        default="text",
+                        max_length=20,
+                    ),
+                ),
+                ("title", models.CharField(blank=True, max_length=160)),
+                ("body", models.TextField(blank=True)),
+                ("media_url", models.URLField(blank=True)),
+                ("metadata", models.JSONField(blank=True, default=dict)),
+                ("sort_order", models.PositiveIntegerField(default=0)),
+                (
+                    "lesson",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="content_blocks",
+                        to="courses.lesson",
+                    ),
+                ),
             ],
             options={
-                'ordering': ('sort_order', 'id'),
+                "ordering": ("sort_order", "id"),
             },
         ),
         migrations.CreateModel(
-            name='LessonProgress',
+            name="LessonProgress",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('status', models.CharField(choices=[('not_started', 'Not started'), ('in_progress', 'In progress'), ('completed', 'Completed')], default='not_started', max_length=20)),
-                ('progress_percent', models.PositiveSmallIntegerField(default=0, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(100)])),
-                ('started_at', models.DateTimeField(blank=True, null=True)),
-                ('completed_at', models.DateTimeField(blank=True, null=True)),
-                ('last_seen_at', models.DateTimeField(auto_now=True)),
-                ('lesson', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='progress_records', to='courses.lesson')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='lesson_progress', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("not_started", "Not started"),
+                            ("in_progress", "In progress"),
+                            ("completed", "Completed"),
+                        ],
+                        default="not_started",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "progress_percent",
+                    models.PositiveSmallIntegerField(
+                        default=0,
+                        validators=[
+                            django.core.validators.MinValueValidator(0),
+                            django.core.validators.MaxValueValidator(100),
+                        ],
+                    ),
+                ),
+                ("started_at", models.DateTimeField(blank=True, null=True)),
+                ("completed_at", models.DateTimeField(blank=True, null=True)),
+                ("last_seen_at", models.DateTimeField(auto_now=True)),
+                (
+                    "lesson",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="progress_records",
+                        to="courses.lesson",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="lesson_progress",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ('lesson__module__sort_order', 'lesson__sort_order'),
+                "ordering": ("lesson__module__sort_order", "lesson__sort_order"),
             },
         ),
         migrations.CreateModel(
-            name='Option',
+            name="Option",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('text', models.CharField(max_length=500)),
-                ('is_correct', models.BooleanField(default=False)),
-                ('sort_order', models.PositiveIntegerField(default=0)),
-                ('question', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='options', to='courses.question')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("text", models.CharField(max_length=500)),
+                ("is_correct", models.BooleanField(default=False)),
+                ("sort_order", models.PositiveIntegerField(default=0)),
+                (
+                    "question",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="options",
+                        to="courses.question",
+                    ),
+                ),
             ],
             options={
-                'ordering': ('sort_order', 'id'),
+                "ordering": ("sort_order", "id"),
             },
         ),
         migrations.CreateModel(
-            name='Quiz',
+            name="Quiz",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=180)),
-                ('passing_score', models.PositiveSmallIntegerField(default=70, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(100)])),
-                ('xp_reward', models.PositiveIntegerField(default=25)),
-                ('max_attempts', models.PositiveIntegerField(default=3)),
-                ('is_published', models.BooleanField(default=True)),
-                ('lesson', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='quiz', to='courses.lesson')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("title", models.CharField(max_length=180)),
+                (
+                    "passing_score",
+                    models.PositiveSmallIntegerField(
+                        default=70,
+                        validators=[
+                            django.core.validators.MinValueValidator(0),
+                            django.core.validators.MaxValueValidator(100),
+                        ],
+                    ),
+                ),
+                ("xp_reward", models.PositiveIntegerField(default=25)),
+                ("max_attempts", models.PositiveIntegerField(default=3)),
+                ("is_published", models.BooleanField(default=True)),
+                (
+                    "lesson",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="quiz",
+                        to="courses.lesson",
+                    ),
+                ),
             ],
             options={
-                'verbose_name_plural': 'Quizzes',
+                "verbose_name_plural": "Quizzes",
             },
         ),
         migrations.AddField(
-            model_name='question',
-            name='quiz',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='questions', to='courses.quiz'),
+            model_name="question",
+            name="quiz",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="questions",
+                to="courses.quiz",
+            ),
         ),
         migrations.CreateModel(
-            name='QuizAttempt',
+            name="QuizAttempt",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('score', models.PositiveSmallIntegerField(default=0, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(100)])),
-                ('passed', models.BooleanField(default=False)),
-                ('answers', models.JSONField(blank=True, default=dict)),
-                ('xp_awarded', models.PositiveIntegerField(default=0)),
-                ('started_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('completed_at', models.DateTimeField(blank=True, null=True)),
-                ('quiz', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='attempts', to='courses.quiz')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='quiz_attempts', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "score",
+                    models.PositiveSmallIntegerField(
+                        default=0,
+                        validators=[
+                            django.core.validators.MinValueValidator(0),
+                            django.core.validators.MaxValueValidator(100),
+                        ],
+                    ),
+                ),
+                ("passed", models.BooleanField(default=False)),
+                ("answers", models.JSONField(blank=True, default=dict)),
+                ("xp_awarded", models.PositiveIntegerField(default=0)),
+                ("started_at", models.DateTimeField(default=django.utils.timezone.now)),
+                ("completed_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "quiz",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="attempts",
+                        to="courses.quiz",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="quiz_attempts",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ('-started_at',),
+                "ordering": ("-started_at",),
             },
         ),
         migrations.CreateModel(
-            name='Skill',
+            name="Skill",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=120, unique=True)),
-                ('slug', models.SlugField(blank=True, max_length=140, unique=True)),
-                ('description', models.CharField(blank=True, max_length=255)),
-                ('courses', models.ManyToManyField(blank=True, related_name='skills', to='courses.course')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(max_length=120, unique=True)),
+                ("slug", models.SlugField(blank=True, max_length=140, unique=True)),
+                ("description", models.CharField(blank=True, max_length=255)),
+                (
+                    "courses",
+                    models.ManyToManyField(blank=True, related_name="skills", to="courses.course"),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='UserBadge',
+            name="UserBadge",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('awarded_at', models.DateTimeField(auto_now_add=True)),
-                ('badge', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='user_badges', to='courses.badge')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='badges', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("awarded_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "badge",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="user_badges",
+                        to="courses.badge",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="badges",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ('-awarded_at',),
+                "ordering": ("-awarded_at",),
             },
         ),
         migrations.CreateModel(
-            name='UserLearningPathProgress',
+            name="UserLearningPathProgress",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('completed_courses', models.PositiveIntegerField(default=0)),
-                ('total_courses', models.PositiveIntegerField(default=0)),
-                ('progress_percent', models.PositiveSmallIntegerField(default=0, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(100)])),
-                ('started_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('completed_at', models.DateTimeField(blank=True, null=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('learning_path', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='user_progress', to='courses.learningpath')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='learning_path_progress', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("completed_courses", models.PositiveIntegerField(default=0)),
+                ("total_courses", models.PositiveIntegerField(default=0)),
+                (
+                    "progress_percent",
+                    models.PositiveSmallIntegerField(
+                        default=0,
+                        validators=[
+                            django.core.validators.MinValueValidator(0),
+                            django.core.validators.MaxValueValidator(100),
+                        ],
+                    ),
+                ),
+                ("started_at", models.DateTimeField(default=django.utils.timezone.now)),
+                ("completed_at", models.DateTimeField(blank=True, null=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "learning_path",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="user_progress",
+                        to="courses.learningpath",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="learning_path_progress",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='UserSkillProgress',
+            name="UserSkillProgress",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('level', models.PositiveIntegerField(default=1)),
-                ('xp', models.PositiveIntegerField(default=0)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('skill', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='user_progress', to='courses.skill')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='skill_progress', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("level", models.PositiveIntegerField(default=1)),
+                ("xp", models.PositiveIntegerField(default=0)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "skill",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="user_progress",
+                        to="courses.skill",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="skill_progress",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='XPTransaction',
+            name="XPTransaction",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('amount', models.PositiveIntegerField()),
-                ('source', models.CharField(choices=[('lesson_completed', 'Lesson completed'), ('quiz_passed', 'Quiz passed'), ('streak_bonus', 'Streak bonus'), ('manual', 'Manual')], max_length=30)),
-                ('description', models.CharField(blank=True, max_length=255)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('course', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='xp_transactions', to='courses.course')),
-                ('lesson', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='xp_transactions', to='courses.lesson')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='xp_transactions', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("amount", models.PositiveIntegerField()),
+                (
+                    "source",
+                    models.CharField(
+                        choices=[
+                            ("lesson_completed", "Lesson completed"),
+                            ("quiz_passed", "Quiz passed"),
+                            ("streak_bonus", "Streak bonus"),
+                            ("manual", "Manual"),
+                        ],
+                        max_length=30,
+                    ),
+                ),
+                ("description", models.CharField(blank=True, max_length=255)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "course",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="xp_transactions",
+                        to="courses.course",
+                    ),
+                ),
+                (
+                    "lesson",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="xp_transactions",
+                        to="courses.lesson",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="xp_transactions",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ('-created_at',),
+                "ordering": ("-created_at",),
             },
         ),
         migrations.CreateModel(
-            name='CourseProgress',
+            name="CourseProgress",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('completed_lessons', models.PositiveIntegerField(default=0)),
-                ('total_lessons', models.PositiveIntegerField(default=0)),
-                ('progress_percent', models.PositiveSmallIntegerField(default=0, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(100)])),
-                ('xp_earned', models.PositiveIntegerField(default=0)),
-                ('started_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('completed_at', models.DateTimeField(blank=True, null=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('course', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='progress_records', to='courses.course')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='course_progress', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("completed_lessons", models.PositiveIntegerField(default=0)),
+                ("total_lessons", models.PositiveIntegerField(default=0)),
+                (
+                    "progress_percent",
+                    models.PositiveSmallIntegerField(
+                        default=0,
+                        validators=[
+                            django.core.validators.MinValueValidator(0),
+                            django.core.validators.MaxValueValidator(100),
+                        ],
+                    ),
+                ),
+                ("xp_earned", models.PositiveIntegerField(default=0)),
+                ("started_at", models.DateTimeField(default=django.utils.timezone.now)),
+                ("completed_at", models.DateTimeField(blank=True, null=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "course",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="progress_records",
+                        to="courses.course",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="course_progress",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ('-updated_at',),
-                'unique_together': {('user', 'course')},
+                "ordering": ("-updated_at",),
+                "unique_together": {("user", "course")},
             },
         ),
         migrations.CreateModel(
-            name='LearningPathCourse',
+            name="LearningPathCourse",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('sort_order', models.PositiveIntegerField(default=0)),
-                ('required', models.BooleanField(default=True)),
-                ('course', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='learning_path_items', to='courses.course')),
-                ('learning_path', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='path_courses', to='courses.learningpath')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("sort_order", models.PositiveIntegerField(default=0)),
+                ("required", models.BooleanField(default=True)),
+                (
+                    "course",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="learning_path_items",
+                        to="courses.course",
+                    ),
+                ),
+                (
+                    "learning_path",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="path_courses",
+                        to="courses.learningpath",
+                    ),
+                ),
             ],
             options={
-                'ordering': ('sort_order', 'id'),
-                'unique_together': {('learning_path', 'course')},
+                "ordering": ("sort_order", "id"),
+                "unique_together": {("learning_path", "course")},
             },
         ),
         migrations.AddConstraint(
-            model_name='lesson',
-            constraint=models.UniqueConstraint(fields=('module', 'slug'), name='unique_lesson_slug_per_module'),
+            model_name="lesson",
+            constraint=models.UniqueConstraint(
+                fields=("module", "slug"), name="unique_lesson_slug_per_module"
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='lessonprogress',
-            unique_together={('user', 'lesson')},
+            name="lessonprogress",
+            unique_together={("user", "lesson")},
         ),
         migrations.AlterUniqueTogether(
-            name='userbadge',
-            unique_together={('user', 'badge')},
+            name="userbadge",
+            unique_together={("user", "badge")},
         ),
         migrations.AlterUniqueTogether(
-            name='userlearningpathprogress',
-            unique_together={('user', 'learning_path')},
+            name="userlearningpathprogress",
+            unique_together={("user", "learning_path")},
         ),
         migrations.AlterUniqueTogether(
-            name='userskillprogress',
-            unique_together={('user', 'skill')},
+            name="userskillprogress",
+            unique_together={("user", "skill")},
         ),
     ]

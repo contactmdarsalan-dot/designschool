@@ -6,37 +6,74 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('courses', '0001_initial'),
+        ("courses", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Certificate',
+            name="Certificate",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=200)),
-                ('description', models.TextField(blank=True)),
-                ('template_image', models.ImageField(upload_to='certificates/templates/')),
-                ('issue_date', models.DateTimeField(auto_now_add=True)),
-                ('is_published', models.BooleanField(default=False)),
-                ('course', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='certificates', to='courses.course')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("title", models.CharField(max_length=200)),
+                ("description", models.TextField(blank=True)),
+                ("template_image", models.ImageField(upload_to="certificates/templates/")),
+                ("issue_date", models.DateTimeField(auto_now_add=True)),
+                ("is_published", models.BooleanField(default=False)),
+                (
+                    "course",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="certificates",
+                        to="courses.course",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='StudentCertificate',
+            name="StudentCertificate",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('issued_on', models.DateTimeField(auto_now_add=True)),
-                ('unique_id', models.CharField(editable=False, max_length=12, unique=True)),
-                ('download_link', models.CharField(blank=True, max_length=300, null=True)),
-                ('status', models.CharField(choices=[('pending', 'Pending'), ('issued', 'Issued')], default='pending', max_length=10)),
-                ('certificate', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='student_certificates', to='certificates.certificate')),
-                ('student', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='certificates', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("issued_on", models.DateTimeField(auto_now_add=True)),
+                ("unique_id", models.CharField(editable=False, max_length=12, unique=True)),
+                ("download_link", models.CharField(blank=True, max_length=300, null=True)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[("pending", "Pending"), ("issued", "Issued")],
+                        default="pending",
+                        max_length=10,
+                    ),
+                ),
+                (
+                    "certificate",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="student_certificates",
+                        to="certificates.certificate",
+                    ),
+                ),
+                (
+                    "student",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="certificates",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
     ]

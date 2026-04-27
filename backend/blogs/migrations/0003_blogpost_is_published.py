@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('blogs', '0002_alter_blogpost_content'),
+        ("blogs", "0002_alter_blogpost_content"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='blogpost',
-            name='is_published',
+            model_name="blogpost",
+            name="is_published",
             field=models.BooleanField(default=True),
         ),
     ]

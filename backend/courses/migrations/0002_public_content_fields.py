@@ -5,98 +5,117 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('courses', '0001_initial'),
+        ("courses", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='course',
-            name='display_video',
-            field=models.URLField(blank=True, help_text='Public intro video URL'),
+            model_name="course",
+            name="display_video",
+            field=models.URLField(blank=True, help_text="Public intro video URL"),
         ),
         migrations.AddField(
-            model_name='course',
-            name='duration_weeks',
+            model_name="course",
+            name="duration_weeks",
             field=models.PositiveIntegerField(default=12),
         ),
         migrations.CreateModel(
-            name='CourseFAQ',
+            name="CourseFAQ",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('question', models.CharField(max_length=255)),
-                ('answer', models.TextField(max_length=1200)),
-                ('sort_order', models.PositiveIntegerField(default=0)),
                 (
-                    'course',
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("question", models.CharField(max_length=255)),
+                ("answer", models.TextField(max_length=1200)),
+                ("sort_order", models.PositiveIntegerField(default=0)),
+                (
+                    "course",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='faqs',
-                        to='courses.course',
+                        related_name="faqs",
+                        to="courses.course",
                     ),
                 ),
             ],
             options={
-                'ordering': ('sort_order', 'id'),
+                "ordering": ("sort_order", "id"),
             },
         ),
         migrations.CreateModel(
-            name='CourseModule',
+            name="CourseModule",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=180)),
-                ('description', models.TextField(blank=True, max_length=600)),
-                ('sort_order', models.PositiveIntegerField(default=0)),
                 (
-                    'course',
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("title", models.CharField(max_length=180)),
+                ("description", models.TextField(blank=True, max_length=600)),
+                ("sort_order", models.PositiveIntegerField(default=0)),
+                (
+                    "course",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='modules',
-                        to='courses.course',
+                        related_name="modules",
+                        to="courses.course",
                     ),
                 ),
             ],
             options={
-                'ordering': ('sort_order', 'id'),
+                "ordering": ("sort_order", "id"),
             },
         ),
         migrations.CreateModel(
-            name='CourseTag',
+            name="CourseTag",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('text', models.CharField(max_length=80)),
-                ('sort_order', models.PositiveIntegerField(default=0)),
                 (
-                    'course',
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("text", models.CharField(max_length=80)),
+                ("sort_order", models.PositiveIntegerField(default=0)),
+                (
+                    "course",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='tags',
-                        to='courses.course',
+                        related_name="tags",
+                        to="courses.course",
                     ),
                 ),
             ],
             options={
-                'ordering': ('sort_order', 'id'),
+                "ordering": ("sort_order", "id"),
             },
         ),
         migrations.CreateModel(
-            name='CourseModulePoint',
+            name="CourseModulePoint",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('text', models.CharField(max_length=255)),
-                ('sort_order', models.PositiveIntegerField(default=0)),
                 (
-                    'module',
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("text", models.CharField(max_length=255)),
+                ("sort_order", models.PositiveIntegerField(default=0)),
+                (
+                    "module",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='points',
-                        to='courses.coursemodule',
+                        related_name="points",
+                        to="courses.coursemodule",
                     ),
                 ),
             ],
             options={
-                'ordering': ('sort_order', 'id'),
+                "ordering": ("sort_order", "id"),
             },
         ),
     ]

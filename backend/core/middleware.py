@@ -5,7 +5,7 @@ class SecurityHeadersMiddleware:
     def __call__(self, request):
         response = self.get_response(request)
         response.setdefault(
-            'Content-Security-Policy',
+            "Content-Security-Policy",
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
@@ -18,5 +18,5 @@ class SecurityHeadersMiddleware:
             "form-action 'self'; "
             "frame-ancestors 'none'",
         )
-        response.setdefault('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+        response.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
         return response

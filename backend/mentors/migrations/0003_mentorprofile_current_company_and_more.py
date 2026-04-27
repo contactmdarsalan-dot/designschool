@@ -4,20 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('mentors', '0002_mentorprofile_photo'),
+        ("mentors", "0002_mentorprofile_photo"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='mentorprofile',
-            name='current_company',
-            field=models.CharField(blank=True, help_text='Current company or organization name', max_length=255),
+            model_name="mentorprofile",
+            name="current_company",
+            field=models.CharField(
+                blank=True, help_text="Current company or organization name", max_length=255
+            ),
         ),
         migrations.AddField(
-            model_name='mentorprofile',
-            name='experience',
-            field=models.PositiveIntegerField(default=0, help_text='Years of professional experience'),
+            model_name="mentorprofile",
+            name="experience",
+            field=models.PositiveIntegerField(
+                default=0, help_text="Years of professional experience"
+            ),
         ),
     ]

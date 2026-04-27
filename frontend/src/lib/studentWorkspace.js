@@ -1,5 +1,6 @@
 import {
   Award,
+  Bell,
   BookOpen,
   CalendarCheck2,
   LayoutDashboard,
@@ -50,6 +51,13 @@ export const STUDENT_WORKSPACE_NAV = [
     to: '/dashboard/certificates',
     icon: Award,
     description: 'Proof of completion',
+  },
+  {
+    key: 'notifications',
+    label: 'Notifications',
+    to: '/dashboard/notifications',
+    icon: Bell,
+    description: 'Alerts and email',
   },
   {
     key: 'profile',
@@ -128,9 +136,9 @@ export const formatCompactNumber = (value) =>
   }).format(Number(value || 0));
 
 export const formatCurrency = (value) =>
-  new Intl.NumberFormat('en-US', {
+  new Intl.NumberFormat('en-NP', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'NPR',
     maximumFractionDigits: 0,
   }).format(Number(value || 0));
 

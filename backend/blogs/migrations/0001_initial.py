@@ -8,7 +8,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -17,81 +16,176 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='BlogCategory',
+            name="BlogCategory",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100, unique=True)),
-                ('slug', models.SlugField(blank=True, unique=True)),
-                ('meta_title', models.CharField(blank=True, help_text='SEO title for category page', max_length=70)),
-                ('meta_description', models.TextField(blank=True, help_text='Short SEO description', max_length=160)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(max_length=100, unique=True)),
+                ("slug", models.SlugField(blank=True, unique=True)),
+                (
+                    "meta_title",
+                    models.CharField(
+                        blank=True, help_text="SEO title for category page", max_length=70
+                    ),
+                ),
+                (
+                    "meta_description",
+                    models.TextField(blank=True, help_text="Short SEO description", max_length=160),
+                ),
             ],
             options={
-                'verbose_name_plural': 'Blog Categories',
-                'ordering': ['name'],
+                "verbose_name_plural": "Blog Categories",
+                "ordering": ["name"],
             },
         ),
         migrations.CreateModel(
-            name='BlogTag',
+            name="BlogTag",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=50, unique=True)),
-                ('slug', models.SlugField(blank=True, unique=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(max_length=50, unique=True)),
+                ("slug", models.SlugField(blank=True, unique=True)),
             ],
             options={
-                'verbose_name_plural': 'Tags',
-                'ordering': ['name'],
+                "verbose_name_plural": "Tags",
+                "ordering": ["name"],
             },
         ),
         migrations.CreateModel(
-            name='BlogPost',
+            name="BlogPost",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=200, unique=True)),
-                ('slug', models.SlugField(blank=True, unique=True)),
-                ('meta_title', models.CharField(blank=True, help_text='Custom SEO title (recommended under 70 chars)', max_length=70)),
-                ('meta_description', models.TextField(blank=True, help_text='Custom SEO description (recommended under 160 chars)', max_length=160)),
-                ('keywords', models.CharField(blank=True, help_text='Comma-separated SEO keywords', max_length=255)),
-                ('excerpt', models.TextField(blank=True, help_text='Short summary for cards/previews', max_length=300)),
-                ('content', ckeditor.fields.RichTextField(help_text='Main blog content (supports formatting, images, etc.)')),
-                ('featured_image', models.ImageField(blank=True, null=True, upload_to='blog/featured/')),
-                ('read_time', models.PositiveIntegerField(default=3, help_text='Estimated reading time in minutes')),
-                ('status', models.CharField(choices=[('draft', 'Draft'), ('published', 'Published')], default='draft', max_length=10)),
-                ('views', models.PositiveIntegerField(default=0)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('published_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('author', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='blog_posts', to=settings.AUTH_USER_MODEL)),
-                ('category', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='posts', to='blogs.blogcategory')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("title", models.CharField(max_length=200, unique=True)),
+                ("slug", models.SlugField(blank=True, unique=True)),
+                (
+                    "meta_title",
+                    models.CharField(
+                        blank=True,
+                        help_text="Custom SEO title (recommended under 70 chars)",
+                        max_length=70,
+                    ),
+                ),
+                (
+                    "meta_description",
+                    models.TextField(
+                        blank=True,
+                        help_text="Custom SEO description (recommended under 160 chars)",
+                        max_length=160,
+                    ),
+                ),
+                (
+                    "keywords",
+                    models.CharField(
+                        blank=True, help_text="Comma-separated SEO keywords", max_length=255
+                    ),
+                ),
+                (
+                    "excerpt",
+                    models.TextField(
+                        blank=True, help_text="Short summary for cards/previews", max_length=300
+                    ),
+                ),
+                (
+                    "content",
+                    ckeditor.fields.RichTextField(
+                        help_text="Main blog content (supports formatting, images, etc.)"
+                    ),
+                ),
+                (
+                    "featured_image",
+                    models.ImageField(blank=True, null=True, upload_to="blog/featured/"),
+                ),
+                (
+                    "read_time",
+                    models.PositiveIntegerField(
+                        default=3, help_text="Estimated reading time in minutes"
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[("draft", "Draft"), ("published", "Published")],
+                        default="draft",
+                        max_length=10,
+                    ),
+                ),
+                ("views", models.PositiveIntegerField(default=0)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("published_at", models.DateTimeField(default=django.utils.timezone.now)),
+                (
+                    "author",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="blog_posts",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "category",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="posts",
+                        to="blogs.blogcategory",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-published_at'],
+                "ordering": ["-published_at"],
             },
         ),
         migrations.CreateModel(
-            name='Comment',
+            name="Comment",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=80)),
-                ('email', models.EmailField(max_length=254)),
-                ('content', models.TextField()),
-                ('approved', models.BooleanField(default=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('post', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='comments', to='blogs.blogpost')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(max_length=80)),
+                ("email", models.EmailField(max_length=254)),
+                ("content", models.TextField()),
+                ("approved", models.BooleanField(default=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "post",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="comments",
+                        to="blogs.blogpost",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-created_at'],
+                "ordering": ["-created_at"],
             },
         ),
         migrations.AddIndex(
-            model_name='blogpost',
-            index=models.Index(fields=['slug'], name='blogs_blogp_slug_cd60a0_idx'),
+            model_name="blogpost",
+            index=models.Index(fields=["slug"], name="blogs_blogp_slug_cd60a0_idx"),
         ),
         migrations.AddIndex(
-            model_name='blogpost',
-            index=models.Index(fields=['status'], name='blogs_blogp_status_431752_idx'),
+            model_name="blogpost",
+            index=models.Index(fields=["status"], name="blogs_blogp_status_431752_idx"),
         ),
         migrations.AddIndex(
-            model_name='blogpost',
-            index=models.Index(fields=['published_at'], name='blogs_blogp_publish_1c1044_idx'),
+            model_name="blogpost",
+            index=models.Index(fields=["published_at"], name="blogs_blogp_publish_1c1044_idx"),
         ),
     ]

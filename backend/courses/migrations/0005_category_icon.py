@@ -5,15 +5,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('courses', '0004_category_homepage_fields'),
+        ("courses", "0004_category_homepage_fields"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='category',
-            name='icon',
-            field=models.ImageField(blank=True, null=True, upload_to='courses/category-icons/', validators=[django.core.validators.FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp', 'svg'])]),
+            model_name="category",
+            name="icon",
+            field=models.ImageField(
+                blank=True,
+                null=True,
+                upload_to="courses/category-icons/",
+                validators=[
+                    django.core.validators.FileExtensionValidator(
+                        ["jpg", "jpeg", "png", "webp", "svg"]
+                    )
+                ],
+            ),
         ),
     ]

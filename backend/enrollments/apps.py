@@ -1,8 +1,9 @@
 from django.apps import AppConfig
 
+
 class EnrollmentsConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'enrollments'
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "enrollments"
 
     def ready(self):
-        import enrollments.signals  # ensures signals are loaded
+        pass  # ensures signals are loaded

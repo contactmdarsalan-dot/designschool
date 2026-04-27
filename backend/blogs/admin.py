@@ -1,8 +1,9 @@
+from ckeditor_uploader.widgets import CKEditorUploadingWidget  # ✅ correct widget import
+from django import forms
 from django.contrib import admin
 from django.utils.html import format_html
-from django import forms
+
 from .models import BlogCategory, BlogPost, BlogTag, Comment
-from ckeditor_uploader.widgets import CKEditorUploadingWidget  # ✅ correct widget import
 
 
 # ----------------------------------------
@@ -11,9 +12,9 @@ from ckeditor_uploader.widgets import CKEditorUploadingWidget  # ✅ correct wid
 class BlogPostAdminForm(forms.ModelForm):
     class Meta:
         model = BlogPost
-        fields = '__all__'
+        fields = "__all__"
         widgets = {
-            'content': CKEditorUploadingWidget(),  # ✅ enables upload button in toolbar
+            "content": CKEditorUploadingWidget(),  # ✅ enables upload button in toolbar
         }
 
 
@@ -42,19 +43,30 @@ class BlogPostAdmin(admin.ModelAdmin):
     readonly_fields = ("views", "created_at", "updated_at", "meta_preview", "thumbnail_preview")
 
     fieldsets = (
-        ("🧾 Basic Info", {
-            "fields": ("title", "slug", "author", "category", "status", "is_published", "featured_image", "thumbnail_preview")
-        }),
-        ("✍️ Content", {
-            "fields": ("excerpt", "content", "read_time")
-        }),
-        ("🔍 SEO Settings", {
-            "fields": ("meta_title", "meta_description", "keywords", "meta_preview"),
-            "description": "This section controls how your post appears in search engines and social previews."
-        }),
-        ("📊 Stats & Dates", {
-            "fields": ("views", "created_at", "updated_at", "published_at")
-        }),
+        (
+            "🧾 Basic Info",
+            {
+                "fields": (
+                    "title",
+                    "slug",
+                    "author",
+                    "category",
+                    "status",
+                    "is_published",
+                    "featured_image",
+                    "thumbnail_preview",
+                )
+            },
+        ),
+        ("✍️ Content", {"fields": ("excerpt", "content", "read_time")}),
+        (
+            "🔍 SEO Settings",
+            {
+                "fields": ("meta_title", "meta_description", "keywords", "meta_preview"),
+                "description": "This section controls how your post appears in search engines and social previews.",
+            },
+        ),
+        ("📊 Stats & Dates", {"fields": ("views", "created_at", "updated_at", "published_at")}),
     )
 
     # ----------------------------------------
@@ -67,6 +79,7 @@ class BlogPostAdmin(admin.ModelAdmin):
                 obj.featured_image.url,
             )
         return "—"
+
     thumbnail_preview.short_description = "Thumbnail"
 
     # ----------------------------------------
@@ -110,6 +123,7 @@ class BlogPostAdmin(admin.ModelAdmin):
             </script>
             """
         )
+
     meta_preview.short_description = "SEO Google Preview"
 
 

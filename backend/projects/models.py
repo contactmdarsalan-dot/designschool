@@ -2,11 +2,12 @@
 from django.db import models
 from django.utils.text import slugify
 
+
 class Project(models.Model):
     CATEGORY_CHOICES = [
-        ('web', 'Web Design'),
-        ('app', 'App Design'),
-        ('branding', 'Branding'),
+        ("web", "Web Design"),
+        ("app", "App Design"),
+        ("branding", "Branding"),
     ]
     title = models.CharField(max_length=150)
     slug = models.SlugField(unique=True, blank=True)

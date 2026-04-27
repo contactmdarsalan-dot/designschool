@@ -4,19 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('certificates', '0001_initial'),
+        ("certificates", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='certificate',
-            name='template_image',
+            model_name="certificate",
+            name="template_image",
         ),
         migrations.AddField(
-            model_name='certificate',
-            name='template_file',
-            field=models.FileField(blank=True, upload_to='certificates/templates/'),
+            model_name="certificate",
+            name="template_file",
+            field=models.FileField(blank=True, upload_to="certificates/templates/"),
         ),
     ]

@@ -11,9 +11,10 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
-from pathlib import Path
 from datetime import timedelta
+from pathlib import Path
 
+import sentry_sdk
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
@@ -21,7 +22,7 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load .env file
-load_dotenv(os.path.join(BASE_DIR, '.env'))
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 
 def get_required_env(name):
@@ -32,17 +33,17 @@ def get_required_env(name):
 
 
 def get_bool_env(name, default=False):
-    return os.environ.get(name, str(default)).strip().lower() in {'1', 'true', 'yes', 'on'}
+    return os.environ.get(name, str(default)).strip().lower() in {"1", "true", "yes", "on"}
 
 
-def get_list_env(name, default=''):
+def get_list_env(name, default=""):
     raw_value = os.environ.get(name, default)
-    return [item.strip() for item in raw_value.split(',') if item.strip()]
+    return [item.strip() for item in raw_value.split(",") if item.strip()]
 
 
-def get_sqlite_database(default_name='db.sqlite3'):
+def get_sqlite_database(default_name="db.sqlite3"):
     sqlite_name = os.path.expandvars(
-        os.path.expanduser(os.environ.get('SQLITE_NAME', default_name))
+        os.path.expanduser(os.environ.get("SQLITE_NAME", default_name))
     )
     sqlite_path = Path(sqlite_name)
     if not sqlite_path.is_absolute():
@@ -50,182 +51,201 @@ def get_sqlite_database(default_name='db.sqlite3'):
     sqlite_path.parent.mkdir(parents=True, exist_ok=True)
 
     return {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': sqlite_path,
-            'ATOMIC_REQUESTS': True,
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": sqlite_path,
+            "ATOMIC_REQUESTS": True,
         }
     }
 
 
-ENVIRONMENT = os.environ.get('DJANGO_ENV', os.environ.get('ENVIRONMENT', 'development')).lower()
-IS_PRODUCTION = ENVIRONMENT == 'production'
+ENVIRONMENT = os.environ.get("DJANGO_ENV", os.environ.get("ENVIRONMENT", "development")).lower()
+IS_PRODUCTION = ENVIRONMENT == "production"
+
+if IS_PRODUCTION and os.environ.get("SENTRY_DSN"):
+    sentry_sdk.init(
+        dsn=os.environ.get("SENTRY_DSN", ""),
+        traces_sample_rate=float(os.environ.get("SENTRY_TRACES_RATE", "0.1")),
+        send_default_pii=False,
+    )
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = os.environ.get("SECRET_KEY")
 if not SECRET_KEY:
     if IS_PRODUCTION:
-        raise ImproperlyConfigured('SECRET_KEY must be set when DJANGO_ENV=production')
-    SECRET_KEY = 'django-insecure-default-key'
+        raise ImproperlyConfigured("SECRET_KEY must be set when DJANGO_ENV=production")
+    SECRET_KEY = "django-insecure-default-key"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = get_bool_env('DEBUG', default=not IS_PRODUCTION)
+DEBUG = get_bool_env("DEBUG", default=not IS_PRODUCTION)
 
-RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '')
-PRODUCTION_ALLOWED_HOSTS = RENDER_EXTERNAL_HOSTNAME or '.onrender.com'
+RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "")
+PRODUCTION_ALLOWED_HOSTS = RENDER_EXTERNAL_HOSTNAME or ".onrender.com"
 
 ALLOWED_HOSTS = get_list_env(
-    'ALLOWED_HOSTS',
-    default='127.0.0.1,localhost' if not IS_PRODUCTION else PRODUCTION_ALLOWED_HOSTS,
+    "ALLOWED_HOSTS",
+    default="127.0.0.1,localhost" if not IS_PRODUCTION else PRODUCTION_ALLOWED_HOSTS,
 )
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    'jazzmin',
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'rest_framework',
-    'drf_spectacular',
-    'rest_framework_simplejwt',
-    'rest_framework_simplejwt.token_blacklist',
-    'corsheaders',
+    "jazzmin",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "rest_framework",
+    "drf_spectacular",
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
+    "corsheaders",
     # Project apps
-    'core',
-    'users',
-    'students.apps.StudentsConfig',
-    'mentors',
-    'courses',
-    'enrollments',
-    'classrecordings',
-    'assignments',
-    'attendance',
-    'certificates',
-    'projects',
-    'blogs',
-    'websitecontent',
-    'ckeditor',
-    'ckeditor_uploader',
+    "core",
+    "users",
+    "students.apps.StudentsConfig",
+    "mentors",
+    "courses",
+    "enrollments",
+    "classrecordings",
+    "assignments",
+    "attendance",
+    "certificates",
+    "projects",
+    "blogs",
+    "websitecontent",
+    "ckeditor",
+    "ckeditor_uploader",
 ]
 
 # DRF Settings
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'users.authentication.CookieJWTAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": ("users.authentication.CookieJWTAuthentication",),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticatedOrReadOnly",),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+    "DEFAULT_FILTER_BACKENDS": (
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
     ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
     ),
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "60/minute",
+        "user": "120/minute",
+    },
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.environ.get('JWT_ACCESS_MINUTES', '15'))),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.environ.get('JWT_REFRESH_DAYS', '7'))),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'UPDATE_LAST_LOGIN': True,
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.environ.get("JWT_ACCESS_MINUTES", "15"))),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.environ.get("JWT_REFRESH_DAYS", "7"))),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Design School API',
-    'DESCRIPTION': 'Versioned API for courses, enrollments, learning progress, and platform content.',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
+    "TITLE": "Design School API",
+    "DESCRIPTION": "Versioned API for courses, enrollments, learning progress, and platform content.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
 
-SITE_URL = os.environ.get('SITE_URL', 'http://127.0.0.1:8000')
+SITE_URL = os.environ.get("SITE_URL", "http://127.0.0.1:8000")
 FRONTEND_SITE_URL = os.environ.get(
-    'FRONTEND_SITE_URL',
-    'https://designschool-beta.vercel.app' if IS_PRODUCTION else 'http://127.0.0.1:5173',
+    "FRONTEND_SITE_URL",
+    "https://designschool-beta.vercel.app" if IS_PRODUCTION else "http://127.0.0.1:5173",
 )
 
-DEFAULT_FRONTEND_ORIGINS = ','.join(
-    origin
-    for origin in (FRONTEND_SITE_URL, 'https://designschool-beta.vercel.app')
-    if origin
+DEFAULT_FRONTEND_ORIGINS = ",".join(
+    origin for origin in (FRONTEND_SITE_URL, "https://designschool-beta.vercel.app") if origin
 )
 
-CORS_ALLOW_ALL_ORIGINS = get_bool_env('CORS_ALLOW_ALL_ORIGINS', default=not IS_PRODUCTION)
+CORS_ALLOW_ALL_ORIGINS = get_bool_env("CORS_ALLOW_ALL_ORIGINS", default=not IS_PRODUCTION)
 CORS_ALLOWED_ORIGINS = get_list_env(
-    'CORS_ALLOWED_ORIGINS',
-    default=DEFAULT_FRONTEND_ORIGINS if IS_PRODUCTION else '',
+    "CORS_ALLOWED_ORIGINS",
+    default=DEFAULT_FRONTEND_ORIGINS if IS_PRODUCTION else "",
 )
 CORS_ALLOW_CREDENTIALS = True
 if IS_PRODUCTION and CORS_ALLOW_ALL_ORIGINS:
-    raise ImproperlyConfigured('CORS_ALLOW_ALL_ORIGINS must be false in production.')
+    raise ImproperlyConfigured("CORS_ALLOW_ALL_ORIGINS must be false in production.")
 CSRF_TRUSTED_ORIGINS = get_list_env(
-    'CSRF_TRUSTED_ORIGINS',
-    default=DEFAULT_FRONTEND_ORIGINS if IS_PRODUCTION else '',
+    "CSRF_TRUSTED_ORIGINS",
+    default=DEFAULT_FRONTEND_ORIGINS if IS_PRODUCTION else "",
 )
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'core.middleware.SecurityHeadersMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "core.middleware.SecurityHeadersMiddleware",
 ]
 
-ROOT_URLCONF = 'project.urls'
+ROOT_URLCONF = "project.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
 AUTHENTICATION_BACKENDS = [
-    'users.backends.EmailBackend',  # custom email login backend
-    'django.contrib.auth.backends.ModelBackend',  # default
+    "users.backends.EmailBackend",  # custom email login backend
+    "django.contrib.auth.backends.ModelBackend",  # default
 ]
 
-WSGI_APPLICATION = 'project.wsgi.application'
+WSGI_APPLICATION = "project.wsgi.application"
 
 # settings.py
 
 CKEDITOR_CONFIGS = {
-    'default': {
-        'toolbar': 'full',
-        'height': 400,
-        'width': '100%',
-        'toolbar_Custom': [
-            ['Format', 'Font', 'FontSize'],
-            ['Bold', 'Italic', 'Underline', 'Strike', 'TextColor', 'BGColor'],
-            ['NumberedList', 'BulletedList', 'Blockquote'],
-            ['Link', 'Unlink', 'Image', 'Table', 'CodeSnippet'],
-            ['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'],
-            ['Undo', 'Redo'],
-            ['RemoveFormat', 'Source'],
+    "default": {
+        "toolbar": "full",
+        "height": 400,
+        "width": "100%",
+        "toolbar_Custom": [
+            ["Format", "Font", "FontSize"],
+            ["Bold", "Italic", "Underline", "Strike", "TextColor", "BGColor"],
+            ["NumberedList", "BulletedList", "Blockquote"],
+            ["Link", "Unlink", "Image", "Table", "CodeSnippet"],
+            ["JustifyLeft", "JustifyCenter", "JustifyRight", "JustifyBlock"],
+            ["Undo", "Redo"],
+            ["RemoveFormat", "Source"],
         ],
-        'extraPlugins': ','.join([
-            'uploadimage',  # enable image upload
-            'codesnippet',  # syntax highlight
-            'justify',  # alignment
-            'autolink',  # automatic link detection
-        ]),
+        "extraPlugins": ",".join(
+            [
+                "uploadimage",  # enable image upload
+                "codesnippet",  # syntax highlight
+                "justify",  # alignment
+                "autolink",  # automatic link detection
+            ]
+        ),
     }
 }
 
@@ -239,19 +259,19 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 if IS_PRODUCTION:
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SECURE_SSL_REDIRECT = get_bool_env('SECURE_SSL_REDIRECT', default=True)
-    SESSION_COOKIE_SECURE = get_bool_env('SESSION_COOKIE_SECURE', default=True)
-    CSRF_COOKIE_SECURE = get_bool_env('CSRF_COOKIE_SECURE', default=True)
-    SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '31536000'))
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = get_bool_env("SECURE_SSL_REDIRECT", default=True)
+    SESSION_COOKIE_SECURE = get_bool_env("SESSION_COOKIE_SECURE", default=True)
+    CSRF_COOKIE_SECURE = get_bool_env("CSRF_COOKIE_SECURE", default=True)
+    SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "31536000"))
     SECURE_HSTS_INCLUDE_SUBDOMAINS = get_bool_env(
-        'SECURE_HSTS_INCLUDE_SUBDOMAINS',
+        "SECURE_HSTS_INCLUDE_SUBDOMAINS",
         default=True,
     )
-    SECURE_HSTS_PRELOAD = get_bool_env('SECURE_HSTS_PRELOAD', default=True)
+    SECURE_HSTS_PRELOAD = get_bool_env("SECURE_HSTS_PRELOAD", default=True)
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    X_FRAME_OPTIONS = 'DENY'
-    SECURE_REFERRER_POLICY = 'same-origin'
+    X_FRAME_OPTIONS = "DENY"
+    SECURE_REFERRER_POLICY = "same-origin"
     SESSION_COOKIE_HTTPONLY = True
     CSRF_COOKIE_HTTPONLY = False
 else:
@@ -260,85 +280,88 @@ else:
     CSRF_COOKIE_SECURE = False
     SECURE_HSTS_SECONDS = 0
 
-JWT_AUTH_COOKIE = os.environ.get('JWT_AUTH_COOKIE', 'access_token')
-JWT_REFRESH_COOKIE = os.environ.get('JWT_REFRESH_COOKIE', 'refresh_token')
-JWT_COOKIE_SECURE = get_bool_env('JWT_COOKIE_SECURE', default=IS_PRODUCTION)
-JWT_COOKIE_SAMESITE = os.environ.get('JWT_COOKIE_SAMESITE', 'None' if IS_PRODUCTION else 'Lax')
+JWT_AUTH_COOKIE = os.environ.get("JWT_AUTH_COOKIE", "access_token")
+JWT_REFRESH_COOKIE = os.environ.get("JWT_REFRESH_COOKIE", "refresh_token")
+JWT_COOKIE_SECURE = get_bool_env("JWT_COOKIE_SECURE", default=IS_PRODUCTION)
+JWT_COOKIE_SAMESITE = os.environ.get("JWT_COOKIE_SAMESITE", "None" if IS_PRODUCTION else "Lax")
 
-DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.environ.get('DATA_UPLOAD_MAX_MEMORY_SIZE', str(5 * 1024 * 1024)))
-FILE_UPLOAD_MAX_MEMORY_SIZE = int(os.environ.get('FILE_UPLOAD_MAX_MEMORY_SIZE', str(5 * 1024 * 1024)))
+DATA_UPLOAD_MAX_MEMORY_SIZE = int(
+    os.environ.get("DATA_UPLOAD_MAX_MEMORY_SIZE", str(5 * 1024 * 1024))
+)
+FILE_UPLOAD_MAX_MEMORY_SIZE = int(
+    os.environ.get("FILE_UPLOAD_MAX_MEMORY_SIZE", str(5 * 1024 * 1024))
+)
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 if IS_PRODUCTION:
-    database_url = os.environ.get('DATABASE_URL')
-    conn_max_age = int(os.environ.get('POSTGRES_CONN_MAX_AGE', '60'))
+    database_url = os.environ.get("DATABASE_URL")
+    conn_max_age = int(os.environ.get("POSTGRES_CONN_MAX_AGE", "60"))
     has_postgres_settings = all(
-        os.environ.get(name)
-        for name in ('POSTGRES_DB', 'POSTGRES_USER', 'POSTGRES_PASSWORD')
+        os.environ.get(name) for name in ("POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD")
     )
 
     if database_url:
         import dj_database_url
 
         DATABASES = {
-            'default': dj_database_url.parse(
+            "default": dj_database_url.parse(
                 database_url,
                 conn_max_age=conn_max_age,
-                ssl_require=get_bool_env('POSTGRES_SSL_REQUIRE', default=True),
+                ssl_require=get_bool_env("POSTGRES_SSL_REQUIRE", default=True),
             )
         }
-        DATABASES['default']['ATOMIC_REQUESTS'] = True
+        DATABASES["default"]["ATOMIC_REQUESTS"] = True
     elif has_postgres_settings:
         DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME': get_required_env('POSTGRES_DB'),
-                'USER': get_required_env('POSTGRES_USER'),
-                'PASSWORD': get_required_env('POSTGRES_PASSWORD'),
-                'HOST': os.environ.get('POSTGRES_HOST', '127.0.0.1'),
-                'PORT': os.environ.get('POSTGRES_PORT', '5432'),
-                'OPTIONS': {
-                    'sslmode': os.environ.get('POSTGRES_SSLMODE', 'require'),
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": get_required_env("POSTGRES_DB"),
+                "USER": get_required_env("POSTGRES_USER"),
+                "PASSWORD": get_required_env("POSTGRES_PASSWORD"),
+                "HOST": os.environ.get("POSTGRES_HOST", "127.0.0.1"),
+                "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+                "OPTIONS": {
+                    "sslmode": os.environ.get("POSTGRES_SSLMODE", "require"),
                 },
-                'ATOMIC_REQUESTS': True,
-                'CONN_MAX_AGE': conn_max_age,
+                "ATOMIC_REQUESTS": True,
+                "CONN_MAX_AGE": conn_max_age,
             }
         }
     else:
         raise ImproperlyConfigured(
-            'Production requires DATABASE_URL or POSTGRES_DB, POSTGRES_USER, and POSTGRES_PASSWORD.'
+            "Production requires DATABASE_URL or POSTGRES_DB, POSTGRES_USER, and POSTGRES_PASSWORD."
         )
 else:
     DATABASES = get_sqlite_database()
 
 
-REDIS_URL = os.environ.get('REDIS_URL', '')
+REDIS_URL = os.environ.get("REDIS_URL", "")
 
 if REDIS_URL:
     CACHES = {
-        'default': {
-            'BACKEND': 'django_redis.cache.RedisCache',
-            'LOCATION': REDIS_URL,
-            'OPTIONS': {
-                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
             },
         }
     }
 else:
     CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-            'LOCATION': 'design-school-local-cache',
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "design-school-local-cache",
         }
     }
 
-CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', REDIS_URL or 'memory://')
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', REDIS_URL or 'cache+memory://')
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'UTC'
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", REDIS_URL or "memory://")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", REDIS_URL or "cache+memory://")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "UTC"
 
 
 # Password validation
@@ -346,16 +369,16 @@ CELERY_TIMEZONE = 'UTC'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -363,9 +386,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -375,18 +398,23 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
 # This is required for collectstatic
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Optional: add these if not already
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',  # your project-level static folder
+    BASE_DIR / "static",
 ]
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-SERVE_UPLOADED_MEDIA = get_bool_env('SERVE_UPLOADED_MEDIA', default=IS_PRODUCTION)
+STATICFILES_STORAGE = (
+    "whitenoise.storage.CompressedManifestStaticFilesStorage"
+    if IS_PRODUCTION
+    else "django.contrib.staticfiles.storage.StaticFilesStorage"
+)
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+SERVE_UPLOADED_MEDIA = get_bool_env("SERVE_UPLOADED_MEDIA", default=IS_PRODUCTION)
 
 
 CKEDITOR_UPLOAD_PATH = "uploads/blog/"
@@ -400,107 +428,90 @@ CKEDITOR_IMAGE_BACKEND = "pillow"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 # DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-AUTH_USER_MODEL = 'users.User'
-ADMIN_URL_PATH = os.environ.get('ADMIN_URL_PATH', 'ops-console-2025/').strip('/') + '/'
+AUTH_USER_MODEL = "users.User"
+ADMIN_URL_PATH = os.environ.get("ADMIN_URL_PATH", "ops-console-2025/").strip("/") + "/"
 
 
 JAZZMIN_SETTINGS = {
     # title of the window (Will default to current_admin_site.site_title if absent or None)
     "site_title": "Design School",
-
     # Title on the login screen (19 chars max) (defaults to current_admin_site.site_header if absent or None)
     "site_header": "Design School",
-
     # Title on the brand (19 chars max) (defaults to current_admin_site.site_header if absent or None)
     "site_brand": "Design School",
-
     # Logo to use for your site, must be present in static files, used for brand on top left
     # "site_logo": "books/img/logo.png",
-
     # Logo to use for your site, must be present in static files, used for login form logo (defaults to site_logo)
     "login_logo": None,
-
     # Logo to use for login form in dark themes (defaults to login_logo)
     "login_logo_dark": None,
-
     # CSS classes that are applied to the logo above
     # "site_logo_classes": "img-circle",
-
     # Relative path to a favicon for your site, will default to site_logo if absent (ideally 32x32 px)
     "site_icon": None,
-
     # Welcome text on the login screen
     "welcome_sign": "Welcome to the LMS",
-
     # Copyright on the footer
     # "copyright": "Acme Library Ltd",
-
     # List of model admins to search from the search bar, search bar omitted if excluded
-    # If you want to use a single search field you dont need to use a list, you can use a simple string 
+    # If you want to use a single search field you dont need to use a list, you can use a simple string
     "search_model": ["auth.User", "auth.Group"],
-
     # Field name on user model that contains avatar ImageField/URLField/Charfield or a callable that receives the user
     "user_avatar": None,
-
     ############
     # Top Menu #
     ############
-
     # Links to put along the top menu
     "topmenu_links": [
-
         # Url that gets reversed (Permissions can be added)
-        {"name": "Home",  "url": "admin:index", "permissions": ["auth.view_user"]},
-
+        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
         # external url that opens in a new window (Permissions can be added)
-        {"name": "Support", "url": "https://github.com/farridav/django-jazzmin/issues", "new_window": True},
-
+        {
+            "name": "Support",
+            "url": "https://github.com/farridav/django-jazzmin/issues",
+            "new_window": True,
+        },
         # model admin to link to (Permissions checked against model)
         {"model": "auth.User"},
-
         # App with dropdown menu to all its models pages (Permissions checked against models)
         {"app": "books"},
     ],
-
     #############
     # User Menu #
     #############
-
     # Additional links to include in the user menu on the top right ("app" url type is not allowed)
     "usermenu_links": [
-        {"name": "Support", "url": "https://github.com/farridav/django-jazzmin/issues", "new_window": True},
-        {"model": "auth.user"}
+        {
+            "name": "Support",
+            "url": "https://github.com/farridav/django-jazzmin/issues",
+            "new_window": True,
+        },
+        {"model": "auth.user"},
     ],
-
     #############
     # Side Menu #
     #############
-
     # Whether to display the side menu
     "show_sidebar": True,
-
     # Whether to aut expand the menu
     "navigation_expanded": True,
-
     # Hide these apps when generating side menu e.g (auth)
     "hide_apps": [],
-
     # Hide these models when generating side menu (e.g auth.user)
     "hide_models": [],
-
     # List of apps (and/or models) to base side menu ordering off of (does not need to contain all apps/models)
     "order_with_respect_to": ["auth", "books", "books.author", "books.book"],
-
     # Custom links to append to app groups, keyed on app name
     "custom_links": {
-        "books": [{
-            "name": "Make Messages", 
-            "url": "make_messages", 
-            "icon": "fas fa-comments",
-            "permissions": ["books.view_book"]
-        }]
+        "books": [
+            {
+                "name": "Make Messages",
+                "url": "make_messages",
+                "icon": "fas fa-comments",
+                "permissions": ["books.view_book"],
+            }
+        ]
     },
-
     # Custom icons for side menu apps/models See https://fontawesome.com/icons?d=gallery&m=free&v=5.0.0,5.0.1,5.0.10,5.0.11,5.0.12,5.0.13,5.0.2,5.0.3,5.0.4,5.0.5,5.0.6,5.0.7,5.0.8,5.0.9,5.1.0,5.1.1,5.2.0,5.3.0,5.3.1,5.4.0,5.4.1,5.4.2,5.13.0,5.12.0,5.11.2,5.11.1,5.10.0,5.9.0,5.8.2,5.8.1,5.7.2,5.7.1,5.7.0,5.6.3,5.5.0,5.4.2
     # for the full list of 5.13.0 free icon classes
     "icons": {
@@ -511,13 +522,11 @@ JAZZMIN_SETTINGS = {
     # Icons that are used when one is not manually specified
     "default_icon_parents": "fas fa-chevron-circle-right",
     "default_icon_children": "fas fa-circle",
-
     #################
     # Related Modal #
     #################
     # Use modals instead of popups
     "related_modal_active": False,
-
     #############
     # UI Tweaks #
     #############
@@ -528,7 +537,6 @@ JAZZMIN_SETTINGS = {
     "use_google_fonts_cdn": True,
     # Whether to show the UI customizer on the sidebar
     "show_ui_builder": False,
-
     ###############
     # Change view #
     ###############
@@ -541,5 +549,4 @@ JAZZMIN_SETTINGS = {
     "changeform_format": "horizontal_tabs",
     # override change forms on a per modeladmin basis
     "changeform_format_overrides": {"auth.user": "collapsible", "auth.group": "vertical_tabs"},
-    
 }

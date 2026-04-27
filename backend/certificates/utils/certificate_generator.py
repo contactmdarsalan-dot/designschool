@@ -1,12 +1,13 @@
 import os
-import uuid
 from io import BytesIO
+
 from django.conf import settings
 from PyPDF2 import PdfReader, PdfWriter
-from reportlab.pdfgen import canvas
+from reportlab.lib.colors import Color
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.lib.colors import Color
+from reportlab.pdfgen import canvas
+
 
 def generate_certificate_pdf(student_name, registration_number, output_filename, template_path):
     """

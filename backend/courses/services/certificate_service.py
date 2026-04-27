@@ -10,4 +10,3 @@ def user_is_certificate_eligible(user, course):
         course=course,
         progress_percent=100,
     ).exists()
-

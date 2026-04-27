@@ -4,15 +4,26 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('websitecontent', '0001_initial'),
+        ("websitecontent", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='freeresource',
-            name='resource_type',
-            field=models.CharField(choices=[('checklist', 'Checklist'), ('guide', 'Guide'), ('template', 'Template'), ('video', 'Video'), ('workbook', 'Workbook'), ('resource_pack', 'Resource Pack'), ('other', 'Other')], default='resource_pack', max_length=60),
+            model_name="freeresource",
+            name="resource_type",
+            field=models.CharField(
+                choices=[
+                    ("checklist", "Checklist"),
+                    ("guide", "Guide"),
+                    ("template", "Template"),
+                    ("video", "Video"),
+                    ("workbook", "Workbook"),
+                    ("resource_pack", "Resource Pack"),
+                    ("other", "Other"),
+                ],
+                default="resource_pack",
+                max_length=60,
+            ),
         ),
     ]

@@ -8,6 +8,5 @@ def user_has_verified_enrollment(user, course):
     return Enrollment.objects.filter(
         email__iexact=user.email,
         course=course,
-        status='verified',
+        status="verified",
     ).exists()
-

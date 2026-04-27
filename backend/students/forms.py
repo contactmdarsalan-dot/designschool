@@ -1,5 +1,7 @@
 from django import forms
+
 from .models import StudentProfile
+
 
 class StudentProfileForm(forms.ModelForm):
     first_name = forms.CharField(max_length=50, required=True)
@@ -10,14 +12,14 @@ class StudentProfileForm(forms.ModelForm):
     class Meta:
         model = StudentProfile
         fields = [
-            'first_name',
-            'last_name',
-            'username',
-            'email',
-            'date_of_birth',
-            'phone_number',
+            "first_name",
+            "last_name",
+            "username",
+            "email",
+            "date_of_birth",
+            "phone_number",
         ]
         widgets = {
-            'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
-            'phone_number': forms.TextInput(attrs={'placeholder': 'Enter phone number'}),
+            "date_of_birth": forms.DateInput(attrs={"type": "date"}),
+            "phone_number": forms.TextInput(attrs={"placeholder": "Enter phone number"}),
         }

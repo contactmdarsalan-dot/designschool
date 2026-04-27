@@ -5,126 +5,240 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='CallbackRequest',
+            name="CallbackRequest",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=120)),
-                ('country_code', models.CharField(default='+977', max_length=8)),
-                ('phone_number', models.CharField(max_length=24)),
-                ('enquiry_for', models.CharField(choices=[('online_course', 'Online Course (Website)'), ('live_cohort', 'Live Cohort Program'), ('offline_classes', 'Offline Classes'), ('career_guidance', 'Career Guidance'), ('other', 'Other')], default='online_course', max_length=30)),
-                ('message', models.TextField(blank=True, max_length=1200)),
-                ('source_page', models.CharField(blank=True, help_text='Example: /request-callback', max_length=140)),
-                ('status', models.CharField(choices=[('new', 'New'), ('in_progress', 'In Progress'), ('resolved', 'Resolved'), ('spam', 'Spam')], default='new', max_length=16)),
-                ('admin_note', models.TextField(blank=True, max_length=1000)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(max_length=120)),
+                ("country_code", models.CharField(default="+977", max_length=8)),
+                ("phone_number", models.CharField(max_length=24)),
+                (
+                    "enquiry_for",
+                    models.CharField(
+                        choices=[
+                            ("online_course", "Online Course (Website)"),
+                            ("live_cohort", "Live Cohort Program"),
+                            ("offline_classes", "Offline Classes"),
+                            ("career_guidance", "Career Guidance"),
+                            ("other", "Other"),
+                        ],
+                        default="online_course",
+                        max_length=30,
+                    ),
+                ),
+                ("message", models.TextField(blank=True, max_length=1200)),
+                (
+                    "source_page",
+                    models.CharField(
+                        blank=True, help_text="Example: /request-callback", max_length=140
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("new", "New"),
+                            ("in_progress", "In Progress"),
+                            ("resolved", "Resolved"),
+                            ("spam", "Spam"),
+                        ],
+                        default="new",
+                        max_length=16,
+                    ),
+                ),
+                ("admin_note", models.TextField(blank=True, max_length=1000)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'ordering': ('-created_at',),
+                "ordering": ("-created_at",),
             },
         ),
         migrations.CreateModel(
-            name='FreeResource',
+            name="FreeResource",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=180)),
-                ('slug', models.SlugField(blank=True, max_length=220, unique=True)),
-                ('short_description', models.TextField(max_length=320)),
-                ('resource_type', models.CharField(max_length=60)),
-                ('count_label', models.CharField(help_text='Example: 120 Guides, 200 Videos', max_length=60)),
-                ('icon_key', models.CharField(choices=[('workflow', 'Workflow'), ('code2', 'Code2'), ('notebook', 'Notebook'), ('layout', 'Layout'), ('server', 'Server'), ('database', 'Database'), ('filetext', 'File Text'), ('pen', 'Pen'), ('book', 'Book'), ('video', 'Video'), ('lightbulb', 'Lightbulb'), ('revision', 'Revision')], default='book', max_length=30)),
-                ('level', models.CharField(default='All Levels', max_length=100)),
-                ('format', models.CharField(default='Structured Resource Pack', max_length=160)),
-                ('estimate_time', models.CharField(default='2-3 hours per week', max_length=80)),
-                ('updated_label', models.CharField(default='Updated regularly', max_length=80)),
-                ('accent_label', models.CharField(default='Free Resource', max_length=80)),
-                ('subtitle', models.TextField(blank=True, max_length=500)),
-                ('preview_title', models.CharField(default='Resource Preview', max_length=120)),
-                ('preview_code', models.TextField(blank=True)),
-                ('is_published', models.BooleanField(default=True)),
-                ('sort_order', models.PositiveIntegerField(default=0)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("title", models.CharField(max_length=180)),
+                ("slug", models.SlugField(blank=True, max_length=220, unique=True)),
+                ("short_description", models.TextField(max_length=320)),
+                ("resource_type", models.CharField(max_length=60)),
+                (
+                    "count_label",
+                    models.CharField(help_text="Example: 120 Guides, 200 Videos", max_length=60),
+                ),
+                (
+                    "icon_key",
+                    models.CharField(
+                        choices=[
+                            ("workflow", "Workflow"),
+                            ("code2", "Code2"),
+                            ("notebook", "Notebook"),
+                            ("layout", "Layout"),
+                            ("server", "Server"),
+                            ("database", "Database"),
+                            ("filetext", "File Text"),
+                            ("pen", "Pen"),
+                            ("book", "Book"),
+                            ("video", "Video"),
+                            ("lightbulb", "Lightbulb"),
+                            ("revision", "Revision"),
+                        ],
+                        default="book",
+                        max_length=30,
+                    ),
+                ),
+                ("level", models.CharField(default="All Levels", max_length=100)),
+                ("format", models.CharField(default="Structured Resource Pack", max_length=160)),
+                ("estimate_time", models.CharField(default="2-3 hours per week", max_length=80)),
+                ("updated_label", models.CharField(default="Updated regularly", max_length=80)),
+                ("accent_label", models.CharField(default="Free Resource", max_length=80)),
+                ("subtitle", models.TextField(blank=True, max_length=500)),
+                ("preview_title", models.CharField(default="Resource Preview", max_length=120)),
+                ("preview_code", models.TextField(blank=True)),
+                ("is_published", models.BooleanField(default=True)),
+                ("sort_order", models.PositiveIntegerField(default=0)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'ordering': ('sort_order', 'title'),
+                "ordering": ("sort_order", "title"),
             },
         ),
         migrations.CreateModel(
-            name='SiteSetting',
+            name="SiteSetting",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('site_name', models.CharField(default='Design School', max_length=120)),
-                ('support_email', models.EmailField(blank=True, max_length=254)),
-                ('support_phone', models.CharField(blank=True, max_length=30)),
-                ('support_whatsapp', models.CharField(blank=True, max_length=30)),
-                ('address', models.CharField(blank=True, max_length=255)),
-                ('office_hours', models.CharField(blank=True, max_length=120)),
-                ('footer_tagline', models.CharField(blank=True, max_length=180)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("site_name", models.CharField(default="Design School", max_length=120)),
+                ("support_email", models.EmailField(blank=True, max_length=254)),
+                ("support_phone", models.CharField(blank=True, max_length=30)),
+                ("support_whatsapp", models.CharField(blank=True, max_length=30)),
+                ("address", models.CharField(blank=True, max_length=255)),
+                ("office_hours", models.CharField(blank=True, max_length=120)),
+                ("footer_tagline", models.CharField(blank=True, max_length=180)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Site Setting',
-                'verbose_name_plural': 'Site Settings',
+                "verbose_name": "Site Setting",
+                "verbose_name_plural": "Site Settings",
             },
         ),
         migrations.CreateModel(
-            name='FreeResourceInclude',
+            name="FreeResourceInclude",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('text', models.CharField(max_length=180)),
-                ('sort_order', models.PositiveIntegerField(default=0)),
-                ('resource', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='includes', to='websitecontent.freeresource')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("text", models.CharField(max_length=180)),
+                ("sort_order", models.PositiveIntegerField(default=0)),
+                (
+                    "resource",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="includes",
+                        to="websitecontent.freeresource",
+                    ),
+                ),
             ],
             options={
-                'ordering': ('sort_order', 'id'),
+                "ordering": ("sort_order", "id"),
             },
         ),
         migrations.CreateModel(
-            name='FreeResourceModule',
+            name="FreeResourceModule",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=120)),
-                ('detail', models.TextField(max_length=280)),
-                ('duration', models.CharField(blank=True, max_length=60)),
-                ('sort_order', models.PositiveIntegerField(default=0)),
-                ('resource', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='modules', to='websitecontent.freeresource')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("title", models.CharField(max_length=120)),
+                ("detail", models.TextField(max_length=280)),
+                ("duration", models.CharField(blank=True, max_length=60)),
+                ("sort_order", models.PositiveIntegerField(default=0)),
+                (
+                    "resource",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="modules",
+                        to="websitecontent.freeresource",
+                    ),
+                ),
             ],
             options={
-                'ordering': ('sort_order', 'id'),
+                "ordering": ("sort_order", "id"),
             },
         ),
         migrations.CreateModel(
-            name='FreeResourceOutcome',
+            name="FreeResourceOutcome",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('text', models.CharField(max_length=255)),
-                ('sort_order', models.PositiveIntegerField(default=0)),
-                ('resource', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='outcomes', to='websitecontent.freeresource')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("text", models.CharField(max_length=255)),
+                ("sort_order", models.PositiveIntegerField(default=0)),
+                (
+                    "resource",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="outcomes",
+                        to="websitecontent.freeresource",
+                    ),
+                ),
             ],
             options={
-                'ordering': ('sort_order', 'id'),
+                "ordering": ("sort_order", "id"),
             },
         ),
         migrations.CreateModel(
-            name='FreeResourceWorkflowStep',
+            name="FreeResourceWorkflowStep",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=120)),
-                ('detail', models.TextField(max_length=280)),
-                ('sort_order', models.PositiveIntegerField(default=0)),
-                ('resource', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='workflow_steps', to='websitecontent.freeresource')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("title", models.CharField(max_length=120)),
+                ("detail", models.TextField(max_length=280)),
+                ("sort_order", models.PositiveIntegerField(default=0)),
+                (
+                    "resource",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="workflow_steps",
+                        to="websitecontent.freeresource",
+                    ),
+                ),
             ],
             options={
-                'ordering': ('sort_order', 'id'),
+                "ordering": ("sort_order", "id"),
             },
         ),
     ]

@@ -25,5 +25,9 @@ build/
 *.log
 .shery-*
 sheryians.*
+staticfiles/
+db_backups/
+runtime-db/
+backend_write_test.txt
 !frontend/public/*.png
 !frontend/src/assets/*.png

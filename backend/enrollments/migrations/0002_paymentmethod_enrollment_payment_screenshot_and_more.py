@@ -5,35 +5,47 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('enrollments', '0001_initial'),
+        ("enrollments", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='PaymentMethod',
+            name="PaymentMethod",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=120)),
-                ('qr_code', models.ImageField(upload_to='enrollments/payment_qr_codes/')),
-                ('account_label', models.CharField(blank=True, max_length=160)),
-                ('is_active', models.BooleanField(default=True)),
-                ('sort_order', models.PositiveIntegerField(default=0)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(max_length=120)),
+                ("qr_code", models.ImageField(upload_to="enrollments/payment_qr_codes/")),
+                ("account_label", models.CharField(blank=True, max_length=160)),
+                ("is_active", models.BooleanField(default=True)),
+                ("sort_order", models.PositiveIntegerField(default=0)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'ordering': ('sort_order', 'name'),
+                "ordering": ("sort_order", "name"),
             },
         ),
         migrations.AddField(
-            model_name='enrollment',
-            name='payment_screenshot',
-            field=models.ImageField(blank=True, null=True, upload_to='enrollments/payment_screenshots/'),
+            model_name="enrollment",
+            name="payment_screenshot",
+            field=models.ImageField(
+                blank=True, null=True, upload_to="enrollments/payment_screenshots/"
+            ),
         ),
         migrations.AddField(
-            model_name='enrollment',
-            name='payment_method',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='enrollments', to='enrollments.paymentmethod'),
+            model_name="enrollment",
+            name="payment_method",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="enrollments",
+                to="enrollments.paymentmethod",
+            ),
         ),
     ]

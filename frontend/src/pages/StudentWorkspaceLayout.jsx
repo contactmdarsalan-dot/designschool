@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Bell,
@@ -10,10 +10,11 @@ import {
   Search,
   X,
 } from 'lucide-react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { clearAuthSession, getStoredUser, subscribeToAuthChanges } from '../lib/auth';
-import { STUDENT_WORKSPACE_NAV, cx, getInitials, getStudentWorkspaceMeta } from '../lib/studentWorkspace';
+import { apiFetch } from '../lib/api';
+import { STUDENT_WORKSPACE_NAV, cx, formatDateTime, getInitials, getStudentWorkspaceMeta } from '../lib/studentWorkspace';
 import { SHELL_EASE } from '../lib/studentWorkspaceMotion';
 
 const sidebarMotion = {
@@ -98,6 +99,11 @@ const StudentWorkspaceLayout = () => {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState(getStoredUser());
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState({
+    summary: { unread: 0, total: 0, email_enabled: false },
+    notifications: [],
+  });
 
   useEffect(() => {
     const unsubscribe = subscribeToAuthChanges(() => {
@@ -109,14 +115,51 @@ const StudentWorkspaceLayout = () => {
 
   const pageMeta = useMemo(() => getStudentWorkspaceMeta(location.pathname), [location.pathname]);
 
+  const loadNotifications = useCallback(async () => {
+    try {
+      const { response, payload } = await apiFetch('students/notifications/', { auth: true });
+      if (response.ok && payload?.data) {
+        setNotifications(payload.data);
+      }
+    } catch {
+      setNotifications((current) => current);
+    }
+  }, []);
+
   useEffect(() => {
     document.title = `${pageMeta.label} | Student Workspace`;
   }, [pageMeta.label]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadNotifications();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [loadNotifications, location.pathname]);
 
   const handleLogout = () => {
     clearAuthSession();
     navigate('/login', { replace: true });
   };
+
+  const markAllNotificationsRead = async () => {
+    setNotifications((current) => ({
+      ...current,
+      summary: { ...current.summary, unread: 0 },
+      notifications: (current.notifications || []).map((notification) => ({ ...notification, is_read: true })),
+    }));
+    await apiFetch('students/notifications/', {
+      auth: true,
+      method: 'PATCH',
+      body: { mark_all_read: true },
+    });
+  };
+
+  const unreadCount = Number(notifications.summary?.unread || 0);
+  const previewNotifications = notifications.notifications || [];
 
   return (
     <div className="min-h-screen bg-[#f5f7fb] text-[#22324d] selection:bg-emerald-100 selection:text-emerald-900">
@@ -163,12 +206,83 @@ const StudentWorkspaceLayout = () => {
                 >
                   <MessageSquareMore className="h-4.5 w-4.5" />
                 </button>
-                <button
-                  type="button"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#6d7f99] transition hover:bg-[#f3f6fb] hover:text-[#22324d]"
-                >
-                  <Bell className="h-4.5 w-4.5" />
-                </button>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setNotificationsOpen((value) => !value)}
+                    className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-[#6d7f99] transition hover:bg-[#f3f6fb] hover:text-[#22324d]"
+                    aria-label="Notifications"
+                  >
+                    <Bell className="h-4.5 w-4.5" />
+                    {unreadCount ? (
+                      <span className="absolute right-1 top-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 px-1 text-[10px] font-semibold leading-none text-white">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    ) : null}
+                  </button>
+
+                  <AnimatePresence>
+                    {notificationsOpen ? (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                        transition={{ duration: 0.18 }}
+                        className="absolute right-0 top-12 z-50 w-[min(360px,calc(100vw-32px))] overflow-hidden rounded-2xl border border-[#dfe8f5] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.16)]"
+                      >
+                        <div className="flex items-center justify-between border-b border-[#e7edf6] px-4 py-3">
+                          <div>
+                            <p className="text-sm font-semibold text-[#061b3a]">Notifications</p>
+                            <p className="text-xs text-[#8493ac]">{unreadCount} unread</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={markAllNotificationsRead}
+                            disabled={!unreadCount}
+                            className="rounded-lg px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:text-[#a6b3c6]"
+                          >
+                            Read all
+                          </button>
+                        </div>
+
+                        <div className="max-h-[340px] overflow-y-auto p-2">
+                          {previewNotifications.length ? (
+                            previewNotifications.slice(0, 5).map((notification) => (
+                              <Link
+                                key={notification.id}
+                                to={notification.action_url || '/dashboard/notifications'}
+                                onClick={() => setNotificationsOpen(false)}
+                                className={cx(
+                                  'mb-1 block rounded-xl px-3 py-3 transition hover:bg-[#f5f8fc]',
+                                  notification.is_read ? 'bg-white' : 'bg-emerald-50',
+                                )}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <span className={cx('mt-1.5 h-2 w-2 shrink-0 rounded-full', notification.is_read ? 'bg-[#c7d2e2]' : 'bg-emerald-500')} />
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-semibold text-[#102a4a]">{notification.title}</p>
+                                    <p className="mt-1 line-clamp-1 text-xs text-[#72819a]">{notification.message}</p>
+                                    <p className="mt-2 text-[11px] text-[#9aa8bd]">{formatDateTime(notification.created_at)}</p>
+                                  </div>
+                                </div>
+                              </Link>
+                            ))
+                          ) : (
+                            <div className="px-4 py-8 text-center text-sm text-[#7d8ca4]">No alerts yet.</div>
+                          )}
+                        </div>
+
+                        <Link
+                          to="/dashboard/notifications"
+                          onClick={() => setNotificationsOpen(false)}
+                          className="block border-t border-[#e7edf6] px-4 py-3 text-center text-sm font-semibold text-[#173b63] transition hover:bg-[#f6f9fd]"
+                        >
+                          View notification center
+                        </Link>
+                      </motion.div>
+                    ) : null}
+                  </AnimatePresence>
+                </div>
                 <div className="hidden items-center gap-3 md:flex">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10 text-sm font-semibold text-emerald-700">
                     {getInitials(user?.first_name || user?.email || 'Student')}

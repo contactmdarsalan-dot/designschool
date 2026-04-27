@@ -4,7 +4,7 @@ import { ArrowRight, AlertCircle, Brain, Lock, Mail } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
-import { storeAuthSession } from '../lib/auth';
+import { getDashboardPathForUser, storeAuthSession } from '../lib/auth';
 import { extractApiError } from '../lib/errors';
 import { GOOGLE_AUTH_CONFIG, IS_GOOGLE_AUTH_ENABLED } from '../lib/googleAuth';
 
@@ -94,7 +94,7 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const nextPath = new URLSearchParams(location.search).get('next') || '';
-  const studentDestination = nextPath || '/dashboard';
+  const resolveDestination = (user) => nextPath || getDashboardPathForUser(user);
 
   useEffect(() => {
     document.title = 'Sign In | Design School';
@@ -102,12 +102,12 @@ const LoginPage = () => {
 
   const handleGoogleSession = (payload) => {
     if (payload.is_new_user || !payload.user?.is_phone_verified) {
-      navigate('/verify-phone', { state: { email: payload.user?.email, next: studentDestination } });
+      navigate('/verify-phone', { state: { email: payload.user?.email, next: resolveDestination(payload.user) } });
       return;
     }
 
     storeAuthSession(payload);
-    navigate(payload.user?.role === 'admin' ? '/admin-panel' : studentDestination);
+    navigate(resolveDestination(payload.user));
   };
 
   const handleChange = (event) => {
@@ -143,12 +143,12 @@ const LoginPage = () => {
       }
 
       if (!payload.user?.is_phone_verified) {
-        navigate('/verify-phone', { state: { email: payload.user?.email, next: studentDestination } });
+        navigate('/verify-phone', { state: { email: payload.user?.email, next: resolveDestination(payload.user) } });
         return;
       }
 
       storeAuthSession(payload);
-      navigate(payload.user?.role === 'admin' ? '/admin-panel' : studentDestination);
+      navigate(resolveDestination(payload.user));
     } catch (err) {
       setError(err.message || 'Unable to sign you in.');
     } finally {
@@ -182,13 +182,13 @@ const LoginPage = () => {
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-75" />
                     <span className="relative inline-flex h-2 w-2 rounded-full bg-brand" />
                   </span>
-                  Student Workspace
+                  Learning Workspace
                 </div>
                 <h1 className="mb-6 text-4xl font-bold leading-[1.1] md:text-5xl">
                   Pick up your learning where you <span className="bg-gradient-to-r from-white to-zinc-500 bg-clip-text text-transparent">left off.</span>
                 </h1>
                 <p className="text-lg leading-relaxed text-zinc-400">
-                  Access your live courses, recent recordings, assignment deadlines, and certificate progress from one focused workspace.
+                  Access courses, recordings, assignments, and teaching tools from one focused workspace.
                 </p>
               </motion.div>
             </div>
@@ -209,12 +209,12 @@ const LoginPage = () => {
                 <span className="text-xl font-bold tracking-tight">Design School</span>
               </Link>
               <h2 className="text-2xl font-bold">Welcome back</h2>
-              <p className="mt-2 text-center text-zinc-400">Sign in to access your dashboard and active courses.</p>
+              <p className="mt-2 text-center text-zinc-400">Sign in to access your workspace and active courses.</p>
             </div>
 
             <div className="mb-10 hidden lg:block">
               <h2 className="mb-2 text-3xl font-bold tracking-tight">Sign in to your account</h2>
-              <p className="text-zinc-400">Continue into your student dashboard and course workspace.</p>
+              <p className="text-zinc-400">Continue into your course workspace.</p>
             </div>
 
             {IS_GOOGLE_AUTH_ENABLED ? (

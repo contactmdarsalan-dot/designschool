@@ -5,67 +5,114 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('courses', '0006_badge_learningpath_question_dailystreak_lesson_and_more'),
+        ("courses", "0006_badge_learningpath_question_dailystreak_lesson_and_more"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='CourseAudienceItem',
+            name="CourseAudienceItem",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=140)),
-                ('description', models.TextField(blank=True, max_length=600)),
-                ('icon_name', models.CharField(blank=True, default='Users', max_length=80)),
-                ('sort_order', models.PositiveIntegerField(default=0)),
-                ('course', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='audience_items', to='courses.course')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("title", models.CharField(max_length=140)),
+                ("description", models.TextField(blank=True, max_length=600)),
+                ("icon_name", models.CharField(blank=True, default="Users", max_length=80)),
+                ("sort_order", models.PositiveIntegerField(default=0)),
+                (
+                    "course",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="audience_items",
+                        to="courses.course",
+                    ),
+                ),
             ],
             options={
-                'ordering': ('sort_order', 'id'),
+                "ordering": ("sort_order", "id"),
             },
         ),
         migrations.CreateModel(
-            name='CourseDetailFact',
+            name="CourseDetailFact",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('label', models.CharField(max_length=90)),
-                ('value', models.CharField(max_length=140)),
-                ('description', models.CharField(blank=True, max_length=240)),
-                ('icon_name', models.CharField(blank=True, default='CircleCheck', max_length=80)),
-                ('sort_order', models.PositiveIntegerField(default=0)),
-                ('course', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='detail_facts', to='courses.course')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("label", models.CharField(max_length=90)),
+                ("value", models.CharField(max_length=140)),
+                ("description", models.CharField(blank=True, max_length=240)),
+                ("icon_name", models.CharField(blank=True, default="CircleCheck", max_length=80)),
+                ("sort_order", models.PositiveIntegerField(default=0)),
+                (
+                    "course",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="detail_facts",
+                        to="courses.course",
+                    ),
+                ),
             ],
             options={
-                'ordering': ('sort_order', 'id'),
+                "ordering": ("sort_order", "id"),
             },
         ),
         migrations.CreateModel(
-            name='CourseSkillOutcome',
+            name="CourseSkillOutcome",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=140)),
-                ('description', models.TextField(blank=True, max_length=700)),
-                ('icon_name', models.CharField(blank=True, default='Sparkles', max_length=80)),
-                ('sort_order', models.PositiveIntegerField(default=0)),
-                ('course', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='skill_outcomes', to='courses.course')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("title", models.CharField(max_length=140)),
+                ("description", models.TextField(blank=True, max_length=700)),
+                ("icon_name", models.CharField(blank=True, default="Sparkles", max_length=80)),
+                ("sort_order", models.PositiveIntegerField(default=0)),
+                (
+                    "course",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="skill_outcomes",
+                        to="courses.course",
+                    ),
+                ),
             ],
             options={
-                'ordering': ('sort_order', 'id'),
+                "ordering": ("sort_order", "id"),
             },
         ),
         migrations.CreateModel(
-            name='CourseTopic',
+            name="CourseTopic",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=120)),
-                ('slug', models.SlugField(blank=True, max_length=140)),
-                ('sort_order', models.PositiveIntegerField(default=0)),
-                ('course', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='topics', to='courses.course')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(max_length=120)),
+                ("slug", models.SlugField(blank=True, max_length=140)),
+                ("sort_order", models.PositiveIntegerField(default=0)),
+                (
+                    "course",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="topics",
+                        to="courses.course",
+                    ),
+                ),
             ],
             options={
-                'ordering': ('sort_order', 'id'),
-                'unique_together': {('course', 'name')},
+                "ordering": ("sort_order", "id"),
+                "unique_together": {("course", "name")},
             },
         ),
     ]

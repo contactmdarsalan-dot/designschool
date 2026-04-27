@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models import (
+    Badge,
     Category,
     Course,
     CourseAudienceItem,
@@ -12,6 +13,7 @@ from .models import (
     CourseMentorSpotlight,
     CourseModule,
     CourseModulePoint,
+    CourseProgress,
     CourseReview,
     CourseSkillOutcome,
     CourseTag,
@@ -25,20 +27,18 @@ from .models import (
     Lesson,
     LessonContentBlock,
     LessonProgress,
-    CourseProgress,
-    Quiz,
-    Question,
     Option,
+    Question,
+    Quiz,
     QuizAttempt,
     Requirement,
-    Badge,
     Skill,
     UserBadge,
     UserLearningPathProgress,
     UserSkillProgress,
-    XPTransaction,
     WhatYouWillLearn,
     WhoIsFor,
+    XPTransaction,
 )
 
 
@@ -150,117 +150,117 @@ class CourseTechnologyItemInline(admin.TabularInline):
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
     list_display = (
-        'title',
-        'mentor',
-        'category',
-        'level',
-        'language',
-        'actual_price',
-        'discounted_price',
-        'is_discount_active',
-        'is_featured',
-        'featured_order',
-        'is_live',
-        'is_published',
-        'start_date',
+        "title",
+        "mentor",
+        "category",
+        "level",
+        "language",
+        "actual_price",
+        "discounted_price",
+        "is_discount_active",
+        "is_featured",
+        "featured_order",
+        "is_live",
+        "is_published",
+        "start_date",
     )
-    search_fields = ('title', 'slug', 'mentor__username', 'mentor__email', 'category__name')
+    search_fields = ("title", "slug", "mentor__username", "mentor__email", "category__name")
     list_filter = (
-        'level',
-        'language',
-        'is_live',
-        'is_discount_active',
-        'is_featured',
-        'featured_theme',
-        'featured_layout',
-        'is_published',
+        "level",
+        "language",
+        "is_live",
+        "is_discount_active",
+        "is_featured",
+        "featured_theme",
+        "featured_layout",
+        "is_published",
     )
-    readonly_fields = ('created_at', 'updated_at')
-    ordering = ('featured_order', '-created_at')
+    readonly_fields = ("created_at", "updated_at")
+    ordering = ("featured_order", "-created_at")
 
     fieldsets = (
         (
-            'Basic Information',
+            "Basic Information",
             {
-                'fields': (
-                    'title',
-                    'slug',
-                    'mentor',
-                    'category',
-                    'short_description',
-                    'description',
-                    'thumbnail',
-                    'display_video',
-                    'syllabus_url',
+                "fields": (
+                    "title",
+                    "slug",
+                    "mentor",
+                    "category",
+                    "short_description",
+                    "description",
+                    "thumbnail",
+                    "display_video",
+                    "syllabus_url",
                 )
             },
         ),
         (
-            'Pricing',
+            "Pricing",
             {
-                'fields': (
-                    'actual_price',
-                    'discounted_price',
-                    'is_discount_active',
+                "fields": (
+                    "actual_price",
+                    "discounted_price",
+                    "is_discount_active",
                 )
             },
         ),
         (
-            'Schedule & Duration',
+            "Schedule & Duration",
             {
-                'fields': (
-                    'start_date',
-                    'duration_weeks',
-                    'live_days',
-                    'live_time',
-                    'total_hours',
-                    'language',
-                    'level',
-                    'certificate_available',
-                    'detail_badge_text',
+                "fields": (
+                    "start_date",
+                    "duration_weeks",
+                    "live_days",
+                    "live_time",
+                    "total_hours",
+                    "language",
+                    "level",
+                    "certificate_available",
+                    "detail_badge_text",
                 )
             },
         ),
         (
-            'Featured Card',
+            "Featured Card",
             {
-                'fields': (
-                    'is_featured',
-                    'featured_order',
-                    'featured_eyebrow',
-                    'featured_theme',
-                    'featured_layout',
-                    'support_value',
-                    'support_label',
+                "fields": (
+                    "is_featured",
+                    "featured_order",
+                    "featured_eyebrow",
+                    "featured_theme",
+                    "featured_layout",
+                    "support_value",
+                    "support_label",
                 )
             },
         ),
         (
-            'Enrollment',
+            "Enrollment",
             {
-                'fields': (
-                    'total_seats',
-                    'enrolled_students',
-                    'is_live',
+                "fields": (
+                    "total_seats",
+                    "enrolled_students",
+                    "is_live",
                 )
             },
         ),
         (
-            'Status & Ratings',
+            "Status & Ratings",
             {
-                'fields': (
-                    'is_published',
-                    'rating_avg',
-                    'rating_count',
+                "fields": (
+                    "is_published",
+                    "rating_avg",
+                    "rating_count",
                 )
             },
         ),
         (
-            'Timestamps',
+            "Timestamps",
             {
-                'fields': (
-                    'created_at',
-                    'updated_at',
+                "fields": (
+                    "created_at",
+                    "updated_at",
                 )
             },
         ),
@@ -286,144 +286,168 @@ class CourseAdmin(admin.ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    prepopulated_fields = {'slug': ('name',)}
-    list_display = ('name', 'slug', 'show_on_home', 'sort_order')
-    list_filter = ('show_on_home',)
-    search_fields = ('name', 'short_description')
+    prepopulated_fields = {"slug": ("name",)}
+    list_display = ("name", "slug", "show_on_home", "sort_order")
+    list_filter = ("show_on_home",)
+    search_fields = ("name", "short_description")
     fieldsets = (
-        ('Basic', {'fields': ('name', 'slug', 'short_description')}),
-        ('Homepage Impact Card', {'fields': ('image', 'icon', 'badge', 'icon_name', 'show_on_home', 'sort_order')}),
+        ("Basic", {"fields": ("name", "slug", "short_description")}),
+        (
+            "Homepage Impact Card",
+            {"fields": ("image", "icon", "badge", "icon_name", "show_on_home", "sort_order")},
+        ),
     )
 
 
 @admin.register(CourseReview)
 class CourseReviewAdmin(admin.ModelAdmin):
-    list_display = ('course', 'student', 'rating', 'created_at')
-    search_fields = ('course__title', 'student__username')
-    list_filter = ('rating', 'created_at')
+    list_display = ("course", "student", "rating", "created_at")
+    search_fields = ("course__title", "student__username")
+    list_filter = ("rating", "created_at")
 
 
 @admin.register(CourseModule)
 class CourseModuleAdmin(admin.ModelAdmin):
-    list_display = ('title', 'course', 'sort_order')
-    list_filter = ('course',)
-    search_fields = ('title', 'course__title')
+    list_display = ("title", "course", "sort_order")
+    list_filter = ("course",)
+    search_fields = ("title", "course__title")
     inlines = [CourseModulePointInline, LessonInline]
 
 
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
-    list_display = ('title', 'module', 'lesson_type', 'xp_reward', 'is_preview', 'is_published', 'sort_order')
-    list_filter = ('lesson_type', 'is_preview', 'is_published', 'module__course')
-    search_fields = ('title', 'summary', 'module__title', 'module__course__title')
-    prepopulated_fields = {'slug': ('title',)}
+    list_display = (
+        "title",
+        "module",
+        "lesson_type",
+        "xp_reward",
+        "is_preview",
+        "is_published",
+        "sort_order",
+    )
+    list_filter = ("lesson_type", "is_preview", "is_published", "module__course")
+    search_fields = ("title", "summary", "module__title", "module__course__title")
+    prepopulated_fields = {"slug": ("title",)}
     inlines = [LessonContentBlockInline]
 
 
 @admin.register(Quiz)
 class QuizAdmin(admin.ModelAdmin):
-    list_display = ('title', 'lesson', 'passing_score', 'xp_reward', 'max_attempts', 'is_published')
-    list_filter = ('is_published',)
-    search_fields = ('title', 'lesson__title')
+    list_display = ("title", "lesson", "passing_score", "xp_reward", "max_attempts", "is_published")
+    list_filter = ("is_published",)
+    search_fields = ("title", "lesson__title")
     inlines = [QuestionInline]
 
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    list_display = ('prompt', 'quiz', 'question_type', 'sort_order')
-    list_filter = ('question_type', 'quiz')
-    search_fields = ('prompt', 'quiz__title')
+    list_display = ("prompt", "quiz", "question_type", "sort_order")
+    list_filter = ("question_type", "quiz")
+    search_fields = ("prompt", "quiz__title")
     inlines = [OptionInline]
 
 
 @admin.register(QuizAttempt)
 class QuizAttemptAdmin(admin.ModelAdmin):
-    list_display = ('user', 'quiz', 'score', 'passed', 'xp_awarded', 'completed_at')
-    list_filter = ('passed', 'quiz')
-    search_fields = ('user__username', 'user__email', 'quiz__title')
+    list_display = ("user", "quiz", "score", "passed", "xp_awarded", "completed_at")
+    list_filter = ("passed", "quiz")
+    search_fields = ("user__username", "user__email", "quiz__title")
 
 
 @admin.register(LessonProgress)
 class LessonProgressAdmin(admin.ModelAdmin):
-    list_display = ('user', 'lesson', 'status', 'progress_percent', 'completed_at')
-    list_filter = ('status', 'lesson__module__course')
-    search_fields = ('user__username', 'user__email', 'lesson__title')
+    list_display = ("user", "lesson", "status", "progress_percent", "completed_at")
+    list_filter = ("status", "lesson__module__course")
+    search_fields = ("user__username", "user__email", "lesson__title")
 
 
 @admin.register(CourseProgress)
 class CourseProgressAdmin(admin.ModelAdmin):
-    list_display = ('user', 'course', 'progress_percent', 'xp_earned', 'completed_lessons', 'total_lessons')
-    list_filter = ('course',)
-    search_fields = ('user__username', 'user__email', 'course__title')
+    list_display = (
+        "user",
+        "course",
+        "progress_percent",
+        "xp_earned",
+        "completed_lessons",
+        "total_lessons",
+    )
+    list_filter = ("course",)
+    search_fields = ("user__username", "user__email", "course__title")
 
 
 @admin.register(XPTransaction)
 class XPTransactionAdmin(admin.ModelAdmin):
-    list_display = ('user', 'amount', 'source', 'course', 'lesson', 'created_at')
-    list_filter = ('source', 'course')
-    search_fields = ('user__username', 'user__email', 'description')
+    list_display = ("user", "amount", "source", "course", "lesson", "created_at")
+    list_filter = ("source", "course")
+    search_fields = ("user__username", "user__email", "description")
 
 
 @admin.register(Badge)
 class BadgeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'xp_threshold', 'is_active')
-    list_filter = ('is_active',)
-    search_fields = ('name', 'description')
-    prepopulated_fields = {'slug': ('name',)}
+    list_display = ("name", "xp_threshold", "is_active")
+    list_filter = ("is_active",)
+    search_fields = ("name", "description")
+    prepopulated_fields = {"slug": ("name",)}
 
 
 @admin.register(UserBadge)
 class UserBadgeAdmin(admin.ModelAdmin):
-    list_display = ('user', 'badge', 'awarded_at')
-    search_fields = ('user__username', 'user__email', 'badge__name')
+    list_display = ("user", "badge", "awarded_at")
+    search_fields = ("user__username", "user__email", "badge__name")
 
 
 @admin.register(DailyStreak)
 class DailyStreakAdmin(admin.ModelAdmin):
-    list_display = ('user', 'current_count', 'longest_count', 'last_activity_date')
-    search_fields = ('user__username', 'user__email')
+    list_display = ("user", "current_count", "longest_count", "last_activity_date")
+    search_fields = ("user__username", "user__email")
 
 
 @admin.register(Skill)
 class SkillAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug')
-    search_fields = ('name', 'description')
-    prepopulated_fields = {'slug': ('name',)}
+    list_display = ("name", "slug")
+    search_fields = ("name", "description")
+    prepopulated_fields = {"slug": ("name",)}
 
 
 @admin.register(UserSkillProgress)
 class UserSkillProgressAdmin(admin.ModelAdmin):
-    list_display = ('user', 'skill', 'level', 'xp')
-    list_filter = ('skill',)
-    search_fields = ('user__username', 'user__email', 'skill__name')
+    list_display = ("user", "skill", "level", "xp")
+    list_filter = ("skill",)
+    search_fields = ("user__username", "user__email", "skill__name")
 
 
 @admin.register(LearningPath)
 class LearningPathAdmin(admin.ModelAdmin):
-    list_display = ('title', 'is_published', 'created_at')
-    list_filter = ('is_published',)
-    search_fields = ('title', 'description')
-    prepopulated_fields = {'slug': ('title',)}
+    list_display = ("title", "is_published", "created_at")
+    list_filter = ("is_published",)
+    search_fields = ("title", "description")
+    prepopulated_fields = {"slug": ("title",)}
     inlines = [LearningPathCourseInline]
 
 
 @admin.register(UserLearningPathProgress)
 class UserLearningPathProgressAdmin(admin.ModelAdmin):
-    list_display = ('user', 'learning_path', 'progress_percent', 'completed_courses', 'total_courses')
-    list_filter = ('learning_path',)
-    search_fields = ('user__username', 'user__email', 'learning_path__title')
+    list_display = (
+        "user",
+        "learning_path",
+        "progress_percent",
+        "completed_courses",
+        "total_courses",
+    )
+    list_filter = ("learning_path",)
+    search_fields = ("user__username", "user__email", "learning_path__title")
 
 
 @admin.register(LearningEvent)
 class LearningEventAdmin(admin.ModelAdmin):
-    list_display = ('user', 'event_type', 'course', 'lesson', 'created_at')
-    list_filter = ('event_type', 'course')
-    search_fields = ('user__username', 'user__email', 'course__title', 'lesson__title')
+    list_display = ("user", "event_type", "course", "lesson", "created_at")
+    list_filter = ("event_type", "course")
+    search_fields = ("user__username", "user__email", "course__title", "lesson__title")
 
 
 @admin.register(CourseTechnologyCategory)
 class CourseTechnologyCategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'course', 'sort_order')
-    list_filter = ('course',)
-    search_fields = ('name', 'course__title')
+    list_display = ("name", "course", "sort_order")
+    list_filter = ("course",)
+    search_fields = ("name", "course__title")
     inlines = [CourseTechnologyItemInline]

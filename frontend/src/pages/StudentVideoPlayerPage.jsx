@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
-  ExternalLink,
   Maximize2,
   Pause,
   Play,
@@ -365,15 +364,7 @@ const StudentVideoPlayerPage = () => {
                 <span className="rounded-full border border-[#e5ebf5] bg-[#fbfcfe] px-3 py-1.5">By {recording.uploaded_by}</span>
               ) : null}
             </div>
-            <a
-              href={recording.video_url}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#dce5f0] bg-white px-4 py-3 text-sm font-semibold text-[#53657f] transition hover:bg-[#f8fafc]"
-            >
-              Open source
-              <ExternalLink className="h-4 w-4" />
-            </a>
+
           </div>
 
           <div className="rounded-2xl border border-[#e5ebf5] bg-white p-3 shadow-[0_10px_26px_rgba(15,23,42,0.04)]">

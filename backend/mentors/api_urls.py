@@ -1,10 +1,12 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from .api_views import MentorProfileViewSet
+
+from .api_views import InstructorWorkspaceView, MentorProfileViewSet
 
 router = DefaultRouter()
-router.register(r'', MentorProfileViewSet, basename='mentor-profile')
+router.register(r"", MentorProfileViewSet, basename="mentor-profile")
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path("workspace/", InstructorWorkspaceView.as_view(), name="instructor_workspace"),
+    path("", include(router.urls)),
 ]

@@ -8,17 +8,17 @@ def get_learning_path_queryset():
     return (
         LearningPath.objects.filter(is_published=True)
         .prefetch_related(
-            'path_courses__course__category',
-            'path_courses__course__tags',
-            'path_courses__course__modules__lessons',
+            "path_courses__course__category",
+            "path_courses__course__tags",
+            "path_courses__course__modules__lessons",
         )
-        .order_by('created_at', 'id')
+        .order_by("created_at", "id")
     )
 
 
 @transaction.atomic
 def recompute_learning_path_progress(user, learning_path):
-    course_ids = list(learning_path.path_courses.values_list('course_id', flat=True))
+    course_ids = list(learning_path.path_courses.values_list("course_id", flat=True))
     total_courses = len(course_ids)
     completed_courses = CourseProgress.objects.filter(
         user=user,
@@ -40,18 +40,18 @@ def recompute_learning_path_progress(user, learning_path):
         progress.completed_at = None
     progress.save(
         update_fields=[
-            'total_courses',
-            'completed_courses',
-            'progress_percent',
-            'completed_at',
-            'updated_at',
+            "total_courses",
+            "completed_courses",
+            "progress_percent",
+            "completed_at",
+            "updated_at",
         ]
     )
     return progress
 
 
 def recompute_paths_for_course(user, course):
-    path_ids = course.learning_path_items.values_list('learning_path_id', flat=True)
+    path_ids = course.learning_path_items.values_list("learning_path_id", flat=True)
     paths = LearningPath.objects.filter(id__in=path_ids, is_published=True)
     return [recompute_learning_path_progress(user, path) for path in paths]
 
@@ -60,25 +60,25 @@ def start_learning_path(user, learning_path):
     progress = recompute_learning_path_progress(user, learning_path)
     if not progress.started_at:
         progress.started_at = timezone.now()
-        progress.save(update_fields=['started_at', 'updated_at'])
+        progress.save(update_fields=["started_at", "updated_at"])
     return progress
 
 
 def serialize_path_progress(user, learning_path):
     if not user or not user.is_authenticated:
         return {
-            'started': False,
-            'completedCourses': 0,
-            'totalCourses': learning_path.path_courses.count(),
-            'progressPercent': 0,
-            'completedAt': None,
+            "started": False,
+            "completedCourses": 0,
+            "totalCourses": learning_path.path_courses.count(),
+            "progressPercent": 0,
+            "completedAt": None,
         }
 
     progress = recompute_learning_path_progress(user, learning_path)
     return {
-        'started': True,
-        'completedCourses': progress.completed_courses,
-        'totalCourses': progress.total_courses,
-        'progressPercent': progress.progress_percent,
-        'completedAt': progress.completed_at,
+        "started": True,
+        "completedCourses": progress.completed_courses,
+        "totalCourses": progress.total_courses,
+        "progressPercent": progress.progress_percent,
+        "completedAt": progress.completed_at,
     }

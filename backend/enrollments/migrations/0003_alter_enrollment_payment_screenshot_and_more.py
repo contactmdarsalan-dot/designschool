@@ -5,20 +5,27 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('enrollments', '0002_paymentmethod_enrollment_payment_screenshot_and_more'),
+        ("enrollments", "0002_paymentmethod_enrollment_payment_screenshot_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='enrollment',
-            name='payment_screenshot',
-            field=models.ImageField(blank=True, null=True, upload_to='enrollments/payment_screenshots/', validators=[core.validators.validate_image_upload]),
+            model_name="enrollment",
+            name="payment_screenshot",
+            field=models.ImageField(
+                blank=True,
+                null=True,
+                upload_to="enrollments/payment_screenshots/",
+                validators=[core.validators.validate_image_upload],
+            ),
         ),
         migrations.AlterField(
-            model_name='paymentmethod',
-            name='qr_code',
-            field=models.ImageField(upload_to='enrollments/payment_qr_codes/', validators=[core.validators.validate_image_upload]),
+            model_name="paymentmethod",
+            name="qr_code",
+            field=models.ImageField(
+                upload_to="enrollments/payment_qr_codes/",
+                validators=[core.validators.validate_image_upload],
+            ),
         ),
     ]
