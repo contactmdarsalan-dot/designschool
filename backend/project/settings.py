@@ -363,6 +363,7 @@ STATICFILES_DIRS = [
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+SERVE_UPLOADED_MEDIA = get_bool_env('SERVE_UPLOADED_MEDIA', default=IS_PRODUCTION)
 
 
 CKEDITOR_UPLOAD_PATH = "uploads/blog/"

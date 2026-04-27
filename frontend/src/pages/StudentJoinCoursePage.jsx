@@ -23,7 +23,7 @@ import {
   WorkspacePanel,
 } from '../components/student/StudentWorkspaceUi';
 import { useStudentWorkspaceResource } from '../hooks/useStudentWorkspaceResource';
-import { apiFetch } from '../lib/api';
+import { API_BASE_URL, apiFetch } from '../lib/api';
 import { clearAuthSession } from '../lib/auth';
 import { extractApiError } from '../lib/errors';
 import { cx, formatCurrency, formatDate } from '../lib/studentWorkspace';
@@ -43,6 +43,25 @@ const initialSubmitState = {
   isSubmitting: false,
   error: '',
   success: '',
+};
+
+const resolveMediaUrl = (value) => {
+  if (!value) {
+    return '';
+  }
+
+  if (/^https?:\/\//i.test(value)) {
+    return value;
+  }
+
+  try {
+    const apiOrigin = new URL(API_BASE_URL).origin;
+    return value.startsWith('/')
+      ? `${apiOrigin}${value}`
+      : `${apiOrigin}/${value.replace(/^\/+/, '')}`;
+  } catch {
+    return value;
+  }
 };
 
 const StudentJoinCoursePage = () => {
@@ -66,6 +85,7 @@ const StudentJoinCoursePage = () => {
   const [whatsappNumber, setWhatsappNumber] = useState();
   const [paymentMethodId, setPaymentMethodId] = useState('');
   const [paymentScreenshot, setPaymentScreenshot] = useState(null);
+  const [qrImageFailed, setQrImageFailed] = useState(false);
   const [submitState, setSubmitState] = useState(initialSubmitState);
 
   const filteredCourses = useMemo(() => {
@@ -85,6 +105,11 @@ const StudentJoinCoursePage = () => {
   const selectedPaymentMethod =
     data.payment_methods.find((method) => String(method.id) === String(paymentMethodId)) || data.payment_methods[0] || null;
   const whatsappValue = whatsappNumber ?? data.profile?.whatsapp_number ?? '';
+  const selectedQrCodeUrl = resolveMediaUrl(selectedPaymentMethod?.qr_code_url);
+
+  useEffect(() => {
+    setQrImageFailed(false);
+  }, [selectedQrCodeUrl]);
 
   useEffect(() => {
     if (isLoading || selectedCourseId) {
@@ -458,15 +483,18 @@ const StudentJoinCoursePage = () => {
 
                     <div className="rounded-[1rem] border border-[#e5ebf5] bg-white p-4">
                       <p className="text-[11px] uppercase tracking-[0.18em] text-[#95a4bc]">Scan QR</p>
-                      {selectedPaymentMethod?.qr_code_url ? (
+                      {selectedQrCodeUrl && !qrImageFailed ? (
                         <img
-                          src={selectedPaymentMethod.qr_code_url}
+                          key={selectedQrCodeUrl}
+                          src={selectedQrCodeUrl}
                           alt={`${selectedPaymentMethod.name} QR code`}
                           className="mt-3 aspect-square w-full rounded-[0.9rem] border border-[#edf2f8] object-contain"
+                          loading="lazy"
+                          onError={() => setQrImageFailed(true)}
                         />
                       ) : (
                         <div className="mt-3 flex aspect-square items-center justify-center rounded-[0.9rem] border border-dashed border-[#dbe5f2] text-sm text-[#8fa0bb]">
-                          QR not added
+                          {selectedQrCodeUrl ? 'QR image unavailable' : 'QR not added'}
                         </div>
                       )}
                       <p className="mt-3 text-sm font-medium text-[#22324d]">{selectedPaymentMethod?.name || 'No method'}</p>
