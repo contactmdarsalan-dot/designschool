@@ -1,4 +1,5 @@
 from django.db import models
+from core.validators import validate_image_upload
 
 
 class Enrollment(models.Model):
@@ -21,6 +22,7 @@ class Enrollment(models.Model):
     )
     payment_screenshot = models.ImageField(
         upload_to='enrollments/payment_screenshots/',
+        validators=[validate_image_upload],
         blank=True,
         null=True,
     )
@@ -48,7 +50,7 @@ class VerifiedEnrollment(Enrollment):
 
 class PaymentMethod(models.Model):
     name = models.CharField(max_length=120)
-    qr_code = models.ImageField(upload_to='enrollments/payment_qr_codes/')
+    qr_code = models.ImageField(upload_to='enrollments/payment_qr_codes/', validators=[validate_image_upload])
     account_label = models.CharField(max_length=160, blank=True)
     is_active = models.BooleanField(default=True)
     sort_order = models.PositiveIntegerField(default=0)

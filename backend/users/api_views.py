@@ -1,7 +1,7 @@
 import os
-import random
 import logging
 import json
+import secrets
 from datetime import timedelta
 from decimal import Decimal
 
@@ -15,7 +15,9 @@ from django.utils import timezone
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.views import TokenObtainPairView
 import requests
 
@@ -40,6 +42,78 @@ except ImportError:
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
+
+OTP_TTL_SECONDS = 300
+OTP_ATTEMPT_LIMIT = 5
+OTP_RATE_LIMIT_SECONDS = 3600
+
+
+def get_client_ip(request):
+    forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    if forwarded_for:
+        return forwarded_for.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR', '')
+
+
+def get_otp_cache_keys(email, request):
+    client_ip = get_client_ip(request)
+    identity = f'{email}:{client_ip}'
+    return {
+        'otp': f'otp:{email}',
+        'attempts': f'otp_attempts:{email}',
+        'lock': f'otp_locked:{email}',
+        'rate': f'otp_rate:{identity}',
+    }
+
+
+def increment_cache_counter(key, timeout):
+    value = cache.get(key, 0) + 1
+    cache.set(key, value, timeout=timeout)
+    return value
+
+
+def set_token_cookies(response, refresh):
+    access_token = refresh.access_token
+    cookie_kwargs = {
+        'secure': settings.JWT_COOKIE_SECURE,
+        'httponly': True,
+        'samesite': settings.JWT_COOKIE_SAMESITE,
+        'path': '/',
+    }
+    response.set_cookie(
+        settings.JWT_AUTH_COOKIE,
+        str(access_token),
+        max_age=int(access_token.lifetime.total_seconds()),
+        **cookie_kwargs,
+    )
+    response.set_cookie(
+        settings.JWT_REFRESH_COOKIE,
+        str(refresh),
+        max_age=int(refresh.lifetime.total_seconds()),
+        **cookie_kwargs,
+    )
+    return response
+
+
+def clear_token_cookies(response):
+    for cookie_name in (settings.JWT_AUTH_COOKIE, settings.JWT_REFRESH_COOKIE):
+        response.delete_cookie(
+            cookie_name,
+            path='/',
+            samesite=settings.JWT_COOKIE_SAMESITE,
+        )
+    return response
+
+
+def build_session_response(user, extra=None):
+    refresh = RefreshToken.for_user(user)
+    payload = {
+        'access': str(refresh.access_token),
+        'user': UserSerializer(user).data,
+    }
+    if extra:
+        payload.update(extra)
+    return set_token_cookies(Response(payload), refresh)
 
 
 def send_otp_email(email, otp_code):
@@ -147,6 +221,13 @@ class LoginView(TokenObtainPairView):
     permission_classes = (permissions.AllowAny,)
     serializer_class = EmailTokenObtainPairSerializer
 
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        refresh_token = response.data.pop('refresh', None)
+        if refresh_token:
+            set_token_cookies(response, RefreshToken(refresh_token))
+        return response
+
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -166,12 +247,12 @@ class LogoutView(generics.GenericAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request):
-        refresh_token = request.data.get('refresh')
+        refresh_token = request.data.get('refresh') or request.COOKIES.get(settings.JWT_REFRESH_COOKIE)
         if not refresh_token:
-            return Response(
+            return clear_token_cookies(Response(
                 {'error': 'Refresh token is required.'},
                 status=status.HTTP_400_BAD_REQUEST,
-            )
+            ))
 
         try:
             token = RefreshToken(refresh_token)
@@ -179,15 +260,33 @@ class LogoutView(generics.GenericAPIView):
                 token.blacklist()
             except Exception:
                 pass
-            return Response(
+            return clear_token_cookies(Response(
                 {'message': 'Logged out successfully.'},
                 status=status.HTTP_205_RESET_CONTENT,
-            )
+            ))
         except Exception:
-            return Response(
+            return clear_token_cookies(Response(
                 {'error': 'Invalid refresh token.'},
                 status=status.HTTP_400_BAD_REQUEST,
-            )
+            ))
+
+
+class CookieTokenRefreshView(TokenRefreshView):
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request, *args, **kwargs):
+        refresh_value = request.data.get('refresh') or request.COOKIES.get(settings.JWT_REFRESH_COOKIE, '')
+        serializer = self.get_serializer(data={'refresh': refresh_value})
+        try:
+            serializer.is_valid(raise_exception=True)
+        except TokenError as exc:
+            raise InvalidToken(exc.args[0]) from exc
+
+        response = Response(serializer.validated_data, status=status.HTTP_200_OK)
+        refresh_token = response.data.pop('refresh', None)
+        if refresh_token:
+            set_token_cookies(response, RefreshToken(refresh_token))
+        return response
 
 
 class GoogleLoginView(generics.GenericAPIView):
@@ -262,15 +361,7 @@ class GoogleLoginView(generics.GenericAPIView):
             if updated_fields:
                 user.save(update_fields=updated_fields)
 
-        refresh = RefreshToken.for_user(user)
-        return Response(
-            {
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
-                'user': UserSerializer(user).data,
-                'is_new_user': created,
-            }
-        )
+        return build_session_response(user, {'is_new_user': created})
 
 
 class GenerateOTPView(generics.GenericAPIView):
@@ -292,6 +383,19 @@ class GenerateOTPView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        otp_keys = get_otp_cache_keys(email, request)
+        if cache.get(otp_keys['lock']):
+            return Response(
+                {'error': 'Too many OTP attempts. Please request a new code later.'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        if increment_cache_counter(otp_keys['rate'], OTP_RATE_LIMIT_SECONDS) > OTP_ATTEMPT_LIMIT:
+            return Response(
+                {'error': 'Too many OTP requests. Please try again in an hour.'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
         try:
             user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
@@ -300,7 +404,7 @@ class GenerateOTPView(generics.GenericAPIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        otp_code = str(random.randint(100000, 999999))
+        otp_code = f'{secrets.randbelow(1000000):06d}'
         whatsapp_delivery = send_whatsapp_otp(phone_number, otp_code)
         email_sent = send_otp_email(email, otp_code)
         debug_otp = otp_code if settings.DEBUG else None
@@ -317,7 +421,8 @@ class GenerateOTPView(generics.GenericAPIView):
             print(f'DEV OTP FOR {phone_number}: {otp_code}')
             print('====================================')
 
-        cache.set(f'otp_{email}', otp_code, timeout=300)
+        cache.set(otp_keys['otp'], otp_code, timeout=OTP_TTL_SECONDS)
+        cache.delete(otp_keys['attempts'])
 
         user.phone_number = phone_number
         user.is_phone_verified = False
@@ -372,14 +477,29 @@ class VerifyOTPView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        cached_otp = cache.get(f'otp_{email}')
+        otp_keys = get_otp_cache_keys(email, request)
+        if cache.get(otp_keys['lock']):
+            return Response(
+                {'error': 'Too many invalid OTP attempts. Please request a new code later.'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        cached_otp = cache.get(otp_keys['otp'])
         if not cached_otp:
             return Response(
                 {'error': 'OTP expired or not found. Please request a new one.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if cached_otp != otp_code:
+        if not secrets.compare_digest(str(cached_otp), otp_code):
+            attempts = increment_cache_counter(otp_keys['attempts'], OTP_TTL_SECONDS)
+            if attempts >= OTP_ATTEMPT_LIMIT:
+                cache.set(otp_keys['lock'], True, timeout=OTP_TTL_SECONDS)
+                cache.delete(otp_keys['otp'])
+                return Response(
+                    {'error': 'Too many invalid OTP attempts. Please request a new code later.'},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
             return Response({'error': 'Invalid OTP.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -389,17 +509,11 @@ class VerifyOTPView(generics.GenericAPIView):
 
         user.is_phone_verified = True
         user.save(update_fields=['is_phone_verified'])
-        cache.delete(f'otp_{email}')
+        cache.delete(otp_keys['otp'])
+        cache.delete(otp_keys['attempts'])
+        cache.delete(otp_keys['lock'])
 
-        refresh = RefreshToken.for_user(user)
-        return Response(
-            {
-                'message': 'Phone verified successfully.',
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),
-                'user': UserSerializer(user).data,
-            }
-        )
+        return build_session_response(user, {'message': 'Phone verified successfully.'})
 
 
 class AdminUserViewSet(viewsets.ModelViewSet):

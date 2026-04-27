@@ -1,4 +1,4 @@
-import { getAccessToken } from './auth';
+import { clearAuthSession, getAccessToken, updateAccessToken } from './auth';
 
 const PRODUCTION_API_BASE_URL = 'https://designschool.onrender.com/api/v1';
 
@@ -39,7 +39,7 @@ const parseResponseBody = async (response) => {
 };
 
 export const apiFetch = async (path, options = {}) => {
-  const { auth = false, body, headers = {}, ...restOptions } = options;
+  const { auth = false, body, headers = {}, retryOnUnauthorized = true, ...restOptions } = options;
   const requestHeaders = {
     Accept: 'application/json',
     ...headers,
@@ -48,6 +48,7 @@ export const apiFetch = async (path, options = {}) => {
   const requestOptions = {
     ...restOptions,
     headers: requestHeaders,
+    credentials: 'include',
   };
 
   if (body instanceof FormData) {
@@ -69,6 +70,20 @@ export const apiFetch = async (path, options = {}) => {
     response = await fetch(apiUrl(path), requestOptions);
   } catch (error) {
     throw new Error(`Unable to reach the API at ${API_BASE_URL}. Check the backend deployment and Vercel API URL.`);
+  }
+
+  if (auth && response.status === 401 && retryOnUnauthorized) {
+    const refreshResult = await apiFetch('auth/token/refresh/', {
+      method: 'POST',
+      retryOnUnauthorized: false,
+    });
+
+    if (refreshResult.response.ok && refreshResult.payload?.access) {
+      updateAccessToken(refreshResult.payload.access);
+      return apiFetch(path, { ...options, retryOnUnauthorized: false });
+    }
+
+    clearAuthSession();
   }
 
   const payload = await parseResponseBody(response);

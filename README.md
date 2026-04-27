@@ -38,7 +38,7 @@ graph TD
     end
     
     subgraph Data [Storage Layer]
-        DB[(SQLite / PostgreSQL)]
+        DB[(PostgreSQL)]
         Media[Cloudinary / ImageField Storage]
     end
     
@@ -60,7 +60,7 @@ graph TD
 - **R1.1**: The system shall support Email/Password registration.
 - **R1.2**: The system shall support Google OAuth 2.0 integration.
 - **R1.3**: New users must undergo Phone Verification via OTP before accessing the dashboard.
-- **R1.4**: Secure session management using JWT (Access & Refresh tokens).
+- **R1.4**: Secure session management using JWT in HTTP-only cookies with short-lived access tokens and rotating refresh tokens.
 
 #### 3.2 User Roles
 ```mermaid
@@ -152,7 +152,7 @@ sequenceDiagram
 
 #### 6.2 Security
 - **S1**: All passwords must be hashed using PBKDF2 with SHA256.
-- **S2**: JWT tokens must be stored in HTTP-only cookies or handled via secure state management to prevent XSS.
+- **S2**: JWT tokens must be issued through HTTP-only cookies; frontend code must not persist tokens in localStorage.
 - **S3**: Admin Panel access restricted to users with the `admin` role.
 
 #### 6.3 Aesthetics (Tech-Noir Design)
@@ -166,3 +166,5 @@ Refer to the `backend/` and `frontend/` directories for specific environment req
 
 1. **Backend**: `pip install -r requirements.txt && python manage.py migrate`
 2. **Frontend**: `npm install && npm run dev`
+
+Production requires `DJANGO_ENV=production`, `SECRET_KEY`, and either `DATABASE_URL` or the `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` settings. SQLite is only for local development.

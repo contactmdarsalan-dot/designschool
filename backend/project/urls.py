@@ -22,7 +22,7 @@ from django.views.static import serve
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path(getattr(settings, 'ADMIN_URL_PATH', 'ops-console-2025/'), admin.site.urls),
     path('', include('core.urls')),
     path('students/', include('students.urls')),
     path('classrecordings/', include('classrecordings.urls')),

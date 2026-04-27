@@ -169,7 +169,7 @@ const StudentProfilePage = () => {
       });
 
       const currentWindow = typeof window !== 'undefined' ? window : null;
-      const storedUser = currentWindow?.localStorage.getItem('eduflow.user');
+      const storedUser = currentWindow?.sessionStorage.getItem('eduflow.user');
       if (storedUser) {
         try {
           const parsed = JSON.parse(storedUser);

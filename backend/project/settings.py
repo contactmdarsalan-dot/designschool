@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 from pathlib import Path
+from datetime import timedelta
 
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
@@ -119,12 +120,20 @@ INSTALLED_APPS = [
 # DRF Settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'users.authentication.CookieJWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.environ.get('JWT_ACCESS_MINUTES', '15'))),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.environ.get('JWT_REFRESH_DAYS', '7'))),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
 }
 
 SPECTACULAR_SETTINGS = {
@@ -151,6 +160,9 @@ CORS_ALLOWED_ORIGINS = get_list_env(
     'CORS_ALLOWED_ORIGINS',
     default=DEFAULT_FRONTEND_ORIGINS if IS_PRODUCTION else '',
 )
+CORS_ALLOW_CREDENTIALS = True
+if IS_PRODUCTION and CORS_ALLOW_ALL_ORIGINS:
+    raise ImproperlyConfigured('CORS_ALLOW_ALL_ORIGINS must be false in production.')
 CSRF_TRUSTED_ORIGINS = get_list_env(
     'CSRF_TRUSTED_ORIGINS',
     default=DEFAULT_FRONTEND_ORIGINS if IS_PRODUCTION else '',
@@ -165,6 +177,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.middleware.SecurityHeadersMiddleware',
 ]
 
 ROOT_URLCONF = 'project.urls'
@@ -239,11 +252,21 @@ if IS_PRODUCTION:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
     SECURE_REFERRER_POLICY = 'same-origin'
+    SESSION_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_HTTPONLY = False
 else:
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
     SECURE_HSTS_SECONDS = 0
+
+JWT_AUTH_COOKIE = os.environ.get('JWT_AUTH_COOKIE', 'access_token')
+JWT_REFRESH_COOKIE = os.environ.get('JWT_REFRESH_COOKIE', 'refresh_token')
+JWT_COOKIE_SECURE = get_bool_env('JWT_COOKIE_SECURE', default=IS_PRODUCTION)
+JWT_COOKIE_SAMESITE = os.environ.get('JWT_COOKIE_SAMESITE', 'None' if IS_PRODUCTION else 'Lax')
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = int(os.environ.get('DATA_UPLOAD_MAX_MEMORY_SIZE', str(5 * 1024 * 1024)))
+FILE_UPLOAD_MAX_MEMORY_SIZE = int(os.environ.get('FILE_UPLOAD_MAX_MEMORY_SIZE', str(5 * 1024 * 1024)))
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -378,6 +401,7 @@ CKEDITOR_IMAGE_BACKEND = "pillow"
 
 # DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.User'
+ADMIN_URL_PATH = os.environ.get('ADMIN_URL_PATH', 'ops-console-2025/').strip('/') + '/'
 
 
 JAZZMIN_SETTINGS = {

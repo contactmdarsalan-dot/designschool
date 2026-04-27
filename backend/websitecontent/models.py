@@ -21,6 +21,16 @@ class SiteSetting(models.Model):
 
 
 class FreeResource(models.Model):
+    RESOURCE_TYPE_CHOICES = [
+        ('checklist', 'Checklist'),
+        ('guide', 'Guide'),
+        ('template', 'Template'),
+        ('video', 'Video'),
+        ('workbook', 'Workbook'),
+        ('resource_pack', 'Resource Pack'),
+        ('other', 'Other'),
+    ]
+
     ICON_CHOICES = [
         ('workflow', 'Workflow'),
         ('code2', 'Code2'),
@@ -39,7 +49,7 @@ class FreeResource(models.Model):
     title = models.CharField(max_length=180)
     slug = models.SlugField(max_length=220, unique=True, blank=True)
     short_description = models.TextField(max_length=320)
-    resource_type = models.CharField(max_length=60)
+    resource_type = models.CharField(max_length=60, choices=RESOURCE_TYPE_CHOICES, default='resource_pack')
     count_label = models.CharField(max_length=60, help_text='Example: 120 Guides, 200 Videos')
     icon_key = models.CharField(max_length=30, choices=ICON_CHOICES, default='book')
     level = models.CharField(max_length=100, default='All Levels')

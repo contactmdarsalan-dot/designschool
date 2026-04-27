@@ -22,7 +22,6 @@ import { apiFetch } from '../../lib/api';
 import { normalizeCourseCard } from '../../lib/courseContent';
 import {
   clearAuthSession,
-  getRefreshToken,
   getStoredUser,
   isAdminUser,
   isAuthenticated,
@@ -287,15 +286,11 @@ const Navbar = () => {
   };
 
   const handleLogout = async () => {
-    const refresh = getRefreshToken();
     try {
-      if (refresh) {
-        await apiFetch('auth/logout/', {
-          method: 'POST',
-          auth: true,
-          body: { refresh },
-        });
-      }
+      await apiFetch('auth/logout/', {
+        method: 'POST',
+        auth: true,
+      });
     } catch {
       // We still clear local auth state even if the network request fails.
     } finally {

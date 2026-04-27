@@ -1,7 +1,6 @@
-const ACCESS_TOKEN_KEY = 'eduflow.access_token';
-const REFRESH_TOKEN_KEY = 'eduflow.refresh_token';
 const USER_KEY = 'eduflow.user';
 const AUTH_EVENT = 'eduflow:auth-changed';
+let accessToken = '';
 
 const safeWindow = () => (typeof window !== 'undefined' ? window : null);
 
@@ -13,12 +12,11 @@ const dispatchAuthEvent = () => {
   currentWindow.dispatchEvent(new Event(AUTH_EVENT));
 };
 
-export const getAccessToken = () => safeWindow()?.localStorage.getItem(ACCESS_TOKEN_KEY) || '';
-
-export const getRefreshToken = () => safeWindow()?.localStorage.getItem(REFRESH_TOKEN_KEY) || '';
+export const getAccessToken = () => accessToken;
 
 export const getStoredUser = () => {
-  const raw = safeWindow()?.localStorage.getItem(USER_KEY);
+  const currentWindow = safeWindow();
+  const raw = currentWindow?.sessionStorage.getItem(USER_KEY);
   if (!raw) {
     return null;
   }
@@ -30,7 +28,7 @@ export const getStoredUser = () => {
   }
 };
 
-export const isAuthenticated = () => Boolean(getAccessToken());
+export const isAuthenticated = () => Boolean(getAccessToken() || getStoredUser());
 
 export const isAdminUser = () => {
   const user = getStoredUser();
@@ -52,21 +50,23 @@ export const getDashboardPathForUser = (user) => {
   return '/dashboard';
 };
 
-export const storeAuthSession = ({ access, refresh, user }) => {
+export const storeAuthSession = ({ access, user }) => {
   const currentWindow = safeWindow();
   if (!currentWindow) {
     return;
   }
 
   if (access) {
-    currentWindow.localStorage.setItem(ACCESS_TOKEN_KEY, access);
-  }
-  if (refresh) {
-    currentWindow.localStorage.setItem(REFRESH_TOKEN_KEY, refresh);
+    accessToken = access;
   }
   if (user) {
-    currentWindow.localStorage.setItem(USER_KEY, JSON.stringify(user));
+    currentWindow.sessionStorage.setItem(USER_KEY, JSON.stringify(user));
   }
+  dispatchAuthEvent();
+};
+
+export const updateAccessToken = (token) => {
+  accessToken = token || '';
   dispatchAuthEvent();
 };
 
@@ -76,9 +76,8 @@ export const clearAuthSession = () => {
     return;
   }
 
-  currentWindow.localStorage.removeItem(ACCESS_TOKEN_KEY);
-  currentWindow.localStorage.removeItem(REFRESH_TOKEN_KEY);
-  currentWindow.localStorage.removeItem(USER_KEY);
+  accessToken = '';
+  currentWindow.sessionStorage.removeItem(USER_KEY);
   dispatchAuthEvent();
 };
 
