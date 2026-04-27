@@ -184,6 +184,7 @@ const Navbar = () => {
   const links = [
     { name: 'Home', href: '/' },
     { name: 'Paths', href: '/paths' },
+    { name: 'Assess Skills', href: '/assess-skills' },
     { name: 'Blog', href: '/blog' },
     { name: 'Free Resources', href: '/free-resources' },
     { name: 'Request Callback', href: '/request-callback' },
@@ -272,6 +273,10 @@ const Navbar = () => {
 
     if (href === '/paths') {
       return location.pathname === '/paths';
+    }
+
+    if (href === '/assess-skills') {
+      return location.pathname === '/assess-skills' || location.pathname === '/assess/skills';
     }
 
     if (href === '/dashboard') {

@@ -6,6 +6,7 @@ const Home = lazy(() => import('./pages/Home.jsx'));
 const CoursesPage = lazy(() => import('./pages/CoursesPage.jsx'));
 const CourseDetail = lazy(() => import('./pages/CourseDetail.jsx'));
 const LearningPathsPage = lazy(() => import('./pages/LearningPathsPage.jsx'));
+const AssessSkillsPage = lazy(() => import('./pages/AssessSkillsPage.jsx'));
 const LearningExperiencePage = lazy(() => import('./pages/LearningExperiencePage.jsx'));
 const BlogListPage = lazy(() => import('./pages/BlogListPage.jsx'));
 const BlogDetailPage = lazy(() => import('./pages/BlogDetailPage.jsx'));
@@ -73,6 +74,8 @@ function App() {
           <Route path="/courses" element={<CoursesPage />} />
           <Route path="/courses/:id" element={<CourseDetail />} />
           <Route path="/paths" element={<LearningPathsPage />} />
+          <Route path="/assess-skills" element={<AssessSkillsPage />} />
+          <Route path="/assess/skills" element={<Navigate to="/assess-skills" replace />} />
           <Route path="/learn/:id" element={<LearningExperiencePage />} />
           <Route path="/blog" element={<BlogListPage />} />
           <Route path="/blog/:slug" element={<BlogDetailPage />} />
