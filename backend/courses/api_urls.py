@@ -6,9 +6,13 @@ from .api_views import (
     CourseRecommendationView,
     CourseReviewViewSet,
     CourseViewSet,
+    GamificationSummaryView,
+    LearningPathListView,
+    LearningPathStartView,
     LessonCompleteView,
     LessonStartView,
     QuizAttemptSubmitView,
+    ResumeLearningView,
 )
 
 router = DefaultRouter()
@@ -18,6 +22,10 @@ router.register(r'reviews', CourseReviewViewSet)
 
 urlpatterns = [
     path('recommendations/', CourseRecommendationView.as_view(), name='course_recommendations'),
+    path('resume/', ResumeLearningView.as_view(), name='resume_learning'),
+    path('gamification/summary/', GamificationSummaryView.as_view(), name='gamification_summary'),
+    path('learning-paths/', LearningPathListView.as_view(), name='learning_path_list'),
+    path('learning-paths/<slug:path_slug>/start/', LearningPathStartView.as_view(), name='learning_path_start'),
     path('progress/<str:course_identifier>/', CourseProgressView.as_view(), name='course_progress'),
     path('lessons/<int:lesson_id>/start/', LessonStartView.as_view(), name='lesson_start'),
     path('lessons/<int:lesson_id>/complete/', LessonCompleteView.as_view(), name='lesson_complete'),

@@ -1,9 +1,9 @@
 from django.db import transaction
 from django.utils import timezone
 
-from courses.models import DailyStreak, LearningEvent, QuizAttempt
+from courses.models import LearningEvent, QuizAttempt
 from courses.services.progress_service import get_course_for_lesson, mark_lesson_completed, recompute_course_progress
-from courses.services.xp_service import award_xp
+from courses.services.xp_service import award_xp, update_daily_streak
 
 
 def normalize_answer_payload(raw_answers):
@@ -19,25 +19,6 @@ def normalize_answer_payload(raw_answers):
             option_ids = [option_ids]
         normalized[str(question_id)] = sorted({str(option_id) for option_id in option_ids})
     return normalized
-
-
-def update_daily_streak(user):
-    today = timezone.localdate()
-    streak, _ = DailyStreak.objects.get_or_create(user=user)
-
-    if streak.last_activity_date == today:
-        return streak
-
-    yesterday = today - timezone.timedelta(days=1)
-    if streak.last_activity_date == yesterday:
-        streak.current_count += 1
-    else:
-        streak.current_count = 1
-
-    streak.longest_count = max(streak.longest_count, streak.current_count)
-    streak.last_activity_date = today
-    streak.save(update_fields=['current_count', 'longest_count', 'last_activity_date', 'updated_at'])
-    return streak
 
 
 @transaction.atomic

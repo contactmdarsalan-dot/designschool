@@ -7,13 +7,20 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Category, Course, CourseReview, Lesson, LessonProgress, Quiz
+from .models import Category, Course, CourseReview, LearningPath, Lesson, LessonProgress, Quiz
 from .public_serializers import PublicCourseListSerializer
 from .serializers import CategorySerializer, CourseSerializer, CourseReviewSerializer
 from .services.enrollment_service import user_has_verified_enrollment
+from .services.gamification_service import get_gamification_summary
+from .services.learning_path_service import (
+    get_learning_path_queryset,
+    serialize_path_progress,
+    start_learning_path,
+)
 from .services.progress_service import mark_lesson_completed, mark_lesson_started, recompute_course_progress
 from .services.quiz_service import submit_quiz_attempt
 from .services.recommendation_service import get_recommended_courses_for_user
+from .services.resume_service import get_resume_learning
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -148,6 +155,68 @@ class CourseRecommendationView(APIView):
         courses = get_recommended_courses_for_user(request.user, limit=limit)
         serializer = PublicCourseListSerializer(courses, many=True, context={'request': request})
         return Response({'data': {'courses': serializer.data}})
+
+
+class ResumeLearningView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        return Response({'data': {'resumeLearning': get_resume_learning(request.user)}})
+
+
+class GamificationSummaryView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        return Response({'data': get_gamification_summary(request.user)})
+
+
+class LearningPathListView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        paths = get_learning_path_queryset()
+        data = []
+        for learning_path in paths:
+            path_courses = [item.course for item in learning_path.path_courses.all()]
+            serializer = PublicCourseListSerializer(path_courses, many=True, context={'request': request})
+            data.append(
+                {
+                    'id': learning_path.id,
+                    'title': learning_path.title,
+                    'slug': learning_path.slug,
+                    'description': learning_path.description,
+                    'courseCount': len(path_courses),
+                    'progress': serialize_path_progress(request.user, learning_path),
+                    'courses': serializer.data,
+                }
+            )
+        return Response({'data': {'paths': data}})
+
+
+class LearningPathStartView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, path_slug):
+        learning_path = get_object_or_404(
+            LearningPath.objects.prefetch_related('path_courses__course'),
+            slug=path_slug,
+            is_published=True,
+        )
+        start_learning_path(request.user, learning_path)
+        return Response(
+            {
+                'data': {
+                    'path': {
+                        'id': learning_path.id,
+                        'slug': learning_path.slug,
+                        'title': learning_path.title,
+                        'progress': serialize_path_progress(request.user, learning_path),
+                    }
+                }
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class LessonStartView(APIView):

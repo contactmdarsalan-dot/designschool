@@ -49,7 +49,12 @@ def mark_lesson_completed(user, lesson):
         )
         LearningEvent.objects.create(user=user, course=course, lesson=lesson, event_type='lesson_completed')
 
-    return recompute_course_progress(user, course)
+    course_progress = recompute_course_progress(user, course)
+    if first_completion:
+        from courses.services.learning_path_service import recompute_paths_for_course
+
+        recompute_paths_for_course(user, course)
+    return course_progress
 
 
 def recompute_course_progress(user, course):
@@ -69,6 +74,8 @@ def recompute_course_progress(user, course):
     course_progress.xp_earned = course.xp_transactions.filter(user=user).aggregate(total=Sum('amount'))['total'] or 0
     if total_lessons and completed_lessons == total_lessons:
         course_progress.completed_at = course_progress.completed_at or timezone.now()
+    elif completed_lessons < total_lessons:
+        course_progress.completed_at = None
     course_progress.save(
         update_fields=[
             'total_lessons',

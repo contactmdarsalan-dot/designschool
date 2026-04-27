@@ -8,6 +8,7 @@ from mentors.models import MentorProfile
 
 from .models import (
     Category,
+    Badge,
     Course,
     CourseModule,
     CourseModulePoint,
@@ -15,6 +16,8 @@ from .models import (
     CourseTechnologyCategory,
     CourseTechnologyItem,
     DailyStreak,
+    LearningPath,
+    LearningPathCourse,
     Lesson,
     LessonContentBlock,
     LessonProgress,
@@ -23,6 +26,7 @@ from .models import (
     Quiz,
     QuizAttempt,
     CourseProgress,
+    UserLearningPathProgress,
     XPTransaction,
     Requirement,
     WhatYouWillLearn,
@@ -252,6 +256,86 @@ class PublicCourseApiTests(APITestCase):
                 source='lesson_completed',
             ).exists()
         )
+
+    def test_resume_learning_returns_latest_in_progress_lesson(self):
+        student = User.objects.create_user(
+            username='resume1',
+            email='resume1@example.com',
+            password='Testpass123!',
+            role='student',
+        )
+        course = self.create_course(title='Resume UX')
+        module = CourseModule.objects.create(course=course, title='Core', sort_order=0)
+        lesson = Lesson.objects.create(module=module, title='Continue Me', xp_reward=20)
+        self.client.force_authenticate(student)
+
+        self.client.post(reverse('lesson_start', args=[lesson.id]))
+        response = self.client.get(reverse('resume_learning'))
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()['data']['resumeLearning']
+        self.assertEqual(payload['course']['slug'], course.slug)
+        self.assertEqual(payload['lesson']['id'], lesson.id)
+        self.assertEqual(payload['lesson']['status'], 'in_progress')
+
+    def test_gamification_summary_returns_xp_level_streak_badges_and_leaderboard(self):
+        Badge.objects.create(name='First Spark', xp_threshold=10)
+        student = User.objects.create_user(
+            username='gamified1',
+            email='gamified1@example.com',
+            password='Testpass123!',
+            role='student',
+            first_name='Game',
+            last_name='Student',
+        )
+        course = self.create_course(title='Gamification UX')
+        module = CourseModule.objects.create(course=course, title='Core', sort_order=0)
+        lesson = Lesson.objects.create(module=module, title='Earn XP', xp_reward=40)
+        mark_lesson_completed(student, lesson)
+        self.client.force_authenticate(student)
+
+        response = self.client.get(reverse('gamification_summary'))
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()['data']
+        self.assertEqual(payload['totalXp'], 40)
+        self.assertEqual(payload['level'], 1)
+        self.assertEqual(payload['streak']['current'], 1)
+        self.assertEqual(payload['badges'][0]['name'], 'First Spark')
+        self.assertEqual(payload['leaderboard'][0]['name'], 'Game Student')
+
+    def test_learning_path_api_starts_and_tracks_course_completion(self):
+        student = User.objects.create_user(
+            username='pathstudent',
+            email='pathstudent@example.com',
+            password='Testpass123!',
+            role='student',
+        )
+        course = self.create_course(title='Path Course')
+        module = CourseModule.objects.create(course=course, title='Core', sort_order=0)
+        lesson = Lesson.objects.create(module=module, title='Path Lesson', xp_reward=35)
+        learning_path = LearningPath.objects.create(
+            title='Product Designer Path',
+            description='A complete path for product design.',
+            is_published=True,
+        )
+        LearningPathCourse.objects.create(learning_path=learning_path, course=course, sort_order=0)
+        self.client.force_authenticate(student)
+
+        start_response = self.client.post(reverse('learning_path_start', args=[learning_path.slug]))
+
+        self.assertEqual(start_response.status_code, 200)
+        self.assertEqual(start_response.json()['data']['path']['progress']['progressPercent'], 0)
+        self.assertTrue(UserLearningPathProgress.objects.filter(user=student, learning_path=learning_path).exists())
+
+        mark_lesson_completed(student, lesson)
+        list_response = self.client.get(reverse('learning_path_list'))
+
+        self.assertEqual(list_response.status_code, 200)
+        payload = list_response.json()['data']['paths'][0]
+        self.assertEqual(payload['title'], 'Product Designer Path')
+        self.assertEqual(payload['courseCount'], 1)
+        self.assertEqual(payload['progress']['progressPercent'], 100)
 
     def test_quiz_attempt_api_grades_answers_and_awards_xp_once(self):
         student = User.objects.create_user(

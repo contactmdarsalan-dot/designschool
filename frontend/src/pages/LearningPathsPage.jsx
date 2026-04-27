@@ -1,32 +1,80 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, BookOpen, Compass, Layers3, Route, Sparkles } from 'lucide-react';
+import { ArrowRight, Compass, Flame, Layers3, PlayCircle, Route, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/sheryians/Navbar';
 import Footer from '../components/sheryians/Footer';
 import { apiFetch } from '../lib/api';
+import { isAuthenticated } from '../lib/auth';
 import { normalizeCourseCard } from '../lib/courseContent';
+import { normalizeLearningPath } from '../lib/learningPlatform';
+
+const buildFallbackPaths = (courses) => {
+  const grouped = new Map();
+  courses.forEach((course) => {
+    const key = course.category?.slug || course.tags[0] || 'core';
+    const title = course.category?.name ? `${course.category.name} Path` : `${course.tags[0] || 'Core Skills'} Path`;
+    const row = grouped.get(key) || {
+      id: key,
+      title,
+      slug: key,
+      description: 'Generated from currently published courses while curated paths are being assembled.',
+      persisted: false,
+      progress: { progressPercent: 0, completedCourses: 0, totalCourses: 0 },
+      courses: [],
+    };
+    row.courses.push(course);
+    row.courseCount = row.courses.length;
+    row.progress.totalCourses = row.courses.length;
+    grouped.set(key, row);
+  });
+  return Array.from(grouped.values());
+};
 
 const LearningPathsPage = () => {
-  const [courses, setCourses] = useState([]);
+  const [paths, setPaths] = useState([]);
+  const [resumeLearning, setResumeLearning] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [startingPathSlug, setStartingPathSlug] = useState('');
 
   useEffect(() => {
     let isCancelled = false;
 
-    const loadCourses = async () => {
+    const loadPaths = async () => {
       setIsLoading(true);
       try {
-        const { response, payload } = await apiFetch('public/courses/?page=1&limit=60');
-        if (!response.ok) {
-          throw new Error(payload?.message || 'Could not load learning paths');
+        const pathResult = await apiFetch('courses/learning-paths/', {
+          auth: isAuthenticated(),
+        });
+        const backendPaths = (pathResult.payload?.data?.paths || []).map(normalizeLearningPath);
+
+        if (!pathResult.response.ok) {
+          throw new Error(pathResult.payload?.message || 'Could not load learning paths');
         }
+
+        let nextPaths = backendPaths;
+        if (backendPaths.length === 0) {
+          const courseResult = await apiFetch('public/courses/?page=1&limit=60');
+          const courses = (courseResult.payload?.data?.courses || []).map(normalizeCourseCard);
+          nextPaths = buildFallbackPaths(courses);
+        }
+
+        let resume = null;
+        if (isAuthenticated()) {
+          const resumeResult = await apiFetch('courses/resume/', { auth: true });
+          if (resumeResult.response.ok) {
+            resume = resumeResult.payload?.data?.resumeLearning || null;
+          }
+        }
+
         if (!isCancelled) {
-          setCourses((payload?.data?.courses || []).map(normalizeCourseCard));
+          setPaths(nextPaths);
+          setResumeLearning(resume);
         }
       } catch {
         if (!isCancelled) {
-          setCourses([]);
+          setPaths([]);
+          setResumeLearning(null);
         }
       } finally {
         if (!isCancelled) {
@@ -35,24 +83,34 @@ const LearningPathsPage = () => {
       }
     };
 
-    loadCourses();
+    loadPaths();
 
     return () => {
       isCancelled = true;
     };
   }, []);
 
-  const paths = useMemo(() => {
-    const grouped = new Map();
-    courses.forEach((course) => {
-      const key = course.category?.slug || course.tags[0] || 'all';
-      const name = course.category?.name || course.tags[0] || 'Core Skills';
-      const row = grouped.get(key) || { key, name, courses: [] };
-      row.courses.push(course);
-      grouped.set(key, row);
-    });
-    return Array.from(grouped.values());
-  }, [courses]);
+  const startPath = async (path) => {
+    if (!isAuthenticated() || !path.slug) {
+      return;
+    }
+
+    setStartingPathSlug(path.slug);
+    try {
+      const { response, payload } = await apiFetch(`courses/learning-paths/${path.slug}/start/`, {
+        method: 'POST',
+        auth: true,
+      });
+      if (response.ok) {
+        const progress = payload?.data?.path?.progress;
+        setPaths((current) => current.map((item) => (
+          item.slug === path.slug ? { ...item, progress: { ...item.progress, ...progress } } : item
+        )));
+      }
+    } finally {
+      setStartingPathSlug('');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#050505] text-white">
@@ -65,13 +123,24 @@ const LearningPathsPage = () => {
               <Route size={14} />
               Learning Paths
             </span>
-            <div className="mt-7 grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
+            <div className="mt-7 grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-end">
               <h1 className="max-w-3xl text-[2.7rem] font-semibold leading-[1.02] tracking-tight md:text-[5rem]">
-                Guided tracks for measurable skill growth.
+                Follow a path, keep your streak, level up.
               </h1>
-              <p className="max-w-2xl text-base leading-7 text-white/58 md:text-lg">
-                Each path is assembled from live backend courses and can open directly into the learning room.
-              </p>
+              <div className="max-w-2xl">
+                <p className="text-base leading-7 text-white/58 md:text-lg">
+                  Curated tracks now read from the learning path API, track course completion, and connect into the same XP loop as lessons and quizzes.
+                </p>
+                {resumeLearning ? (
+                  <Link
+                    to={resumeLearning.href}
+                    className="mt-5 inline-flex items-center gap-3 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-5 py-3 text-sm font-semibold text-emerald-100 transition hover:border-emerald-200"
+                  >
+                    <PlayCircle size={17} />
+                    Resume {resumeLearning.lesson?.title}
+                  </Link>
+                ) : null}
+              </div>
             </div>
           </div>
         </section>
@@ -81,7 +150,7 @@ const LearningPathsPage = () => {
             {isLoading ? (
               <div className="grid gap-5 md:grid-cols-2">
                 {Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="h-72 animate-pulse rounded-3xl border border-white/10 bg-white/[0.03]" />
+                  <div key={index} className="h-80 animate-pulse rounded-3xl border border-white/10 bg-white/[0.03]" />
                 ))}
               </div>
             ) : paths.length === 0 ? (
@@ -95,7 +164,7 @@ const LearningPathsPage = () => {
                   const firstCourse = path.courses[0];
                   return (
                     <motion.article
-                      key={path.key}
+                      key={path.id || path.slug}
                       initial={{ opacity: 0, y: 18 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.35, delay: Math.min(index * 0.05, 0.2) }}
@@ -106,13 +175,24 @@ const LearningPathsPage = () => {
                           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-300 text-black">
                             <Layers3 size={22} />
                           </div>
-                          <h2 className="mt-5 text-3xl font-semibold tracking-tight">{path.name}</h2>
-                          <p className="mt-2 text-sm leading-6 text-white/52">
-                            {path.courses.length} course{path.courses.length === 1 ? '' : 's'} arranged as a practical skill path.
+                          <h2 className="mt-5 text-3xl font-semibold tracking-tight">{path.title}</h2>
+                          <p className="mt-2 max-w-xl text-sm leading-6 text-white/52">
+                            {path.description || `${path.courseCount} course sequence with measurable progress.`}
                           </p>
                         </div>
                         <span className="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.16em] text-white/45">
-                          {index + 1}
+                          {path.progress.progressPercent}%
+                        </span>
+                      </div>
+
+                      <div className="mt-6 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                        <div className="h-full rounded-full bg-emerald-300" style={{ width: `${path.progress.progressPercent}%` }} />
+                      </div>
+                      <div className="mt-2 flex items-center justify-between text-xs text-white/42">
+                        <span>{path.progress.completedCourses}/{path.progress.totalCourses || path.courseCount} courses complete</span>
+                        <span className="inline-flex items-center gap-1">
+                          <Flame size={13} className="text-emerald-300" />
+                          XP-ready
                         </span>
                       </div>
 
@@ -138,13 +218,25 @@ const LearningPathsPage = () => {
                       </div>
 
                       {firstCourse ? (
-                        <Link
-                          to={`/learn/${firstCourse.identifier}`}
-                          className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-bold text-black transition hover:bg-emerald-300"
-                        >
-                          Start path
-                          <Sparkles size={16} />
-                        </Link>
+                        <div className="mt-6 flex flex-wrap gap-3">
+                          <Link
+                            to={`/learn/${firstCourse.identifier}`}
+                            className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-bold text-black transition hover:bg-emerald-300"
+                          >
+                            Start learning
+                            <Sparkles size={16} />
+                          </Link>
+                          {isAuthenticated() && path.persisted && path.slug ? (
+                            <button
+                              type="button"
+                              onClick={() => startPath(path)}
+                              disabled={startingPathSlug === path.slug}
+                              className="inline-flex items-center gap-2 rounded-full border border-white/12 px-5 py-3 text-sm font-semibold text-white/80 transition hover:border-emerald-300/40 disabled:opacity-45"
+                            >
+                              {startingPathSlug === path.slug ? 'Starting...' : 'Track this path'}
+                            </button>
+                          ) : null}
+                        </div>
                       ) : null}
                     </motion.article>
                   );

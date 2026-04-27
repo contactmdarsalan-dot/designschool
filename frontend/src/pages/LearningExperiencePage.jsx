@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Award, CheckCircle2, Clock3, FileText, Layers3, PlayCircle, Trophy } from 'lucide-react';
-import { Link, useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { ArrowLeft, Award, CheckCircle2, Clock3, FileText, Flame, Layers3, Medal, PlayCircle, Trophy } from 'lucide-react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/sheryians/Navbar';
 import { apiFetch } from '../lib/api';
 import { isAuthenticated } from '../lib/auth';
 import { normalizeCourseDetail } from '../lib/courseContent';
+import { normalizeGamificationSummary } from '../lib/learningPlatform';
 
 const flattenLessons = (course) => {
   return (course?.curriculum || []).flatMap((module, moduleIndex) => {
@@ -40,6 +42,7 @@ const blockIcon = {
 
 const LearningExperiencePage = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const [course, setCourse] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeLessonId, setActiveLessonId] = useState('');
@@ -50,6 +53,9 @@ const LearningExperiencePage = () => {
   const [quizAnswers, setQuizAnswers] = useState({});
   const [quizResult, setQuizResult] = useState(null);
   const [isSubmittingQuiz, setIsSubmittingQuiz] = useState(false);
+  const [gamification, setGamification] = useState(null);
+
+  const requestedLessonId = searchParams.get('lesson');
 
   const applyProgressPayload = (payload) => {
     const progress = payload?.data || payload;
@@ -62,6 +68,24 @@ const LearningExperiencePage = () => {
           .map((row) => String(row.id)),
       ),
     );
+  };
+
+  const refreshGamification = async () => {
+    if (!isAuthenticated()) {
+      setGamification(null);
+      return;
+    }
+
+    try {
+      const { response, payload } = await apiFetch('courses/gamification/summary/', {
+        auth: true,
+      });
+      if (response.ok) {
+        setGamification(normalizeGamificationSummary(payload?.data || {}));
+      }
+    } catch {
+      // Gamification is secondary to lesson reading.
+    }
   };
 
   useEffect(() => {
@@ -77,8 +101,9 @@ const LearningExperiencePage = () => {
         if (!isCancelled) {
           const normalized = normalizeCourseDetail(payload.data.course);
           const lessons = flattenLessons(normalized);
+          const requestedLesson = lessons.find((lesson) => String(lesson.id) === String(requestedLessonId));
           setCourse(normalized);
-          setActiveLessonId(String(lessons[0]?.id || ''));
+          setActiveLessonId(String(requestedLesson?.id || lessons[0]?.id || ''));
 
           if (isAuthenticated()) {
             const progressResult = await apiFetch(`courses/progress/${normalized.slug || normalized.identifier}/`, {
@@ -87,6 +112,7 @@ const LearningExperiencePage = () => {
             if (progressResult.response.ok) {
               applyProgressPayload(progressResult.payload);
             }
+            await refreshGamification();
           }
         }
       } catch {
@@ -105,7 +131,7 @@ const LearningExperiencePage = () => {
     return () => {
       isCancelled = true;
     };
-  }, [id]);
+  }, [id, requestedLessonId]);
 
   const lessons = useMemo(() => flattenLessons(course), [course]);
   const activeLesson = lessons.find((lesson) => String(lesson.id) === String(activeLessonId)) || lessons[0] || null;
@@ -179,14 +205,15 @@ const LearningExperiencePage = () => {
         auth: true,
         body: { answers: quizAnswers },
       });
-      if (!response.ok) {
-        throw new Error(payload?.message || 'Could not submit quiz.');
-      }
-      setQuizResult(payload?.data?.attempt || null);
-      if (payload?.data?.progress) {
-        applyProgressPayload(payload.data.progress);
-      }
-    } catch {
+        if (!response.ok) {
+          throw new Error(payload?.message || 'Could not submit quiz.');
+        }
+        setQuizResult(payload?.data?.attempt || null);
+        if (payload?.data?.progress) {
+          applyProgressPayload(payload.data.progress);
+        }
+        await refreshGamification();
+      } catch {
       setProgressError('Quiz could not be submitted. Please try again.');
     } finally {
       setIsSubmittingQuiz(false);
@@ -215,6 +242,7 @@ const LearningExperiencePage = () => {
           throw new Error(payload?.message || 'Could not save progress.');
         }
         applyProgressPayload(payload);
+        await refreshGamification();
       } catch {
         setProgressError('Progress could not be saved. Please try again.');
       } finally {
@@ -441,12 +469,71 @@ const LearningExperiencePage = () => {
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/35">Session</p>
           <div className="mt-5 rounded-3xl border border-white/10 bg-white/[0.025] p-5">
             <p className="text-sm text-white/48">Available XP</p>
-            <p className="mt-2 text-4xl font-semibold">{totalXp}</p>
+            <motion.p
+              key={earnedXp}
+              initial={{ scale: 0.94, opacity: 0.7 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.22 }}
+              className="mt-2 text-4xl font-semibold"
+            >
+              {totalXp}
+            </motion.p>
             <p className="mt-1 text-sm text-emerald-200">{earnedXp} XP earned</p>
             <p className="mt-3 text-sm leading-6 text-white/48">
               Lesson progress is saved to your account when you are signed in.
             </p>
           </div>
+          {gamification ? (
+            <div className="mt-4 rounded-3xl border border-emerald-300/20 bg-emerald-300/[0.07] p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200/80">Level</p>
+                  <p className="mt-2 text-3xl font-semibold">{gamification.level}</p>
+                </div>
+                <Trophy className="h-8 w-8 text-emerald-300" />
+              </div>
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-black/35">
+                <div className="h-full rounded-full bg-emerald-300" style={{ width: `${gamification.levelProgressPercent}%` }} />
+              </div>
+              <p className="mt-2 text-xs text-emerald-50/70">
+                {gamification.xpIntoLevel}/{gamification.xpForNextLevel} XP toward next level
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
+                  <Flame className="h-4 w-4 text-emerald-300" />
+                  <p className="mt-2 text-xl font-semibold">{gamification.streak.current}</p>
+                  <p className="text-xs text-white/45">day streak</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
+                  <Medal className="h-4 w-4 text-emerald-300" />
+                  <p className="mt-2 text-xl font-semibold">{gamification.badges.length}</p>
+                  <p className="text-xs text-white/45">badges</p>
+                </div>
+              </div>
+              {gamification.badges.length > 0 ? (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {gamification.badges.slice(0, 3).map((badge) => (
+                    <span key={badge.id} className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs text-white/72">
+                      {badge.name}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              {gamification.leaderboard.length > 0 ? (
+                <div className="mt-4 border-t border-white/10 pt-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/35">Leaderboard</p>
+                  <div className="mt-3 space-y-2">
+                    {gamification.leaderboard.slice(0, 3).map((row) => (
+                      <div key={row.userId} className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-white/72">#{row.rank} {row.name}</span>
+                        <span className="font-semibold text-emerald-200">{row.totalXp} XP</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           {progressError ? (
             <p className="mt-3 rounded-2xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-100">
               {progressError}
