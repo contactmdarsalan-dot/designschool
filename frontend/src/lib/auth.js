@@ -37,6 +37,21 @@ export const isAdminUser = () => {
   return Boolean(user && (user.role === 'admin' || user.is_staff));
 };
 
+export const isMentorUser = () => {
+  const user = getStoredUser();
+  return Boolean(user && user.role === 'mentor');
+};
+
+export const getDashboardPathForUser = (user) => {
+  if (user?.role === 'admin' || user?.is_staff) {
+    return '/admin-panel';
+  }
+  if (user?.role === 'mentor') {
+    return '/instructor-panel';
+  }
+  return '/dashboard';
+};
+
 export const storeAuthSession = ({ access, refresh, user }) => {
   const currentWindow = safeWindow();
   if (!currentWindow) {
