@@ -1,10 +1,27 @@
 import { getAccessToken } from './auth';
 
+const PRODUCTION_API_BASE_URL = 'https://designschool.onrender.com/api/v1';
+
 const DEFAULT_API_BASE_URL = import.meta.env.DEV
   ? 'http://127.0.0.1:8000/api/v1'
-  : 'https://designschool.onrender.com/api/v1';
+  : PRODUCTION_API_BASE_URL;
 
-const baseFromEnv = import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL;
+const envBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
+
+const isSameOriginAsFrontend = (value) => {
+  if (!value || typeof window === 'undefined') {
+    return false;
+  }
+
+  try {
+    return new URL(value, window.location.origin).origin === window.location.origin;
+  } catch (error) {
+    return false;
+  }
+};
+
+const shouldIgnoreEnvBaseUrl = import.meta.env.PROD && isSameOriginAsFrontend(envBaseUrl);
+const baseFromEnv = shouldIgnoreEnvBaseUrl ? PRODUCTION_API_BASE_URL : envBaseUrl || DEFAULT_API_BASE_URL;
 
 export const API_BASE_URL = baseFromEnv.replace(/\/+$/, '');
 
