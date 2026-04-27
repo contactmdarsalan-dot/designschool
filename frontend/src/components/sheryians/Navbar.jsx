@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Award,
@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../../lib/api';
+import { normalizeCourseCard } from '../../lib/courseContent';
 import {
   clearAuthSession,
   getRefreshToken,
@@ -23,6 +24,28 @@ import {
   subscribeToAuthChanges,
 } from '../../lib/auth';
 
+const categoryIconMap = {
+  Brain,
+  Layers,
+  LayoutGrid,
+  PenTool,
+  Sparkles,
+};
+
+const fallbackCourseCategories = [
+  { label: 'UI/UX Design', href: '/courses?q=ui%2Fux', icon: PenTool, description: 'Interface craft, flows, and visual hierarchy' },
+  { label: 'Product Design', href: '/courses?q=product', icon: Layers, description: 'Research-led product thinking and critique' },
+  { label: 'Web Design', href: '/courses?q=web', icon: LayoutGrid, description: 'Responsive pages, systems, and launch polish' },
+  { label: 'Figma', href: '/courses?q=figma', icon: Sparkles, description: 'Prototyping, variants, and handoff workflows' },
+  { label: 'Design Systems', href: '/courses?q=design%20systems', icon: Brain, description: 'Reusable patterns for serious teams' },
+];
+
+const fallbackFeaturedCourses = [
+  { label: 'Beginner UI/UX', href: '/courses?q=beginner%20ui%2Fux', description: 'Start with layout, usability, and portfolio basics' },
+  { label: 'UX Research', href: '/courses?q=ux%20research', description: 'Learn interviews, synthesis, and product insight' },
+  { label: 'Portfolio Mastery', href: '/courses?q=portfolio', description: 'Shape case studies that hiring teams can scan' },
+];
+
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -31,6 +54,8 @@ const Navbar = () => {
   const [mobileCoursesOpen, setMobileCoursesOpen] = useState(false);
   const [showNav, setShowNav] = useState(true);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [dynamicCategories, setDynamicCategories] = useState([]);
+  const [dynamicFeaturedCourses, setDynamicFeaturedCourses] = useState([]);
   const [session, setSession] = useState({
     authenticated: isAuthenticated(),
     user: getStoredUser(),
@@ -77,28 +102,81 @@ const Navbar = () => {
     setMenuOpen(false);
     setMegaOpen(false);
     setMobileCoursesOpen(false);
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadMenuData = async () => {
+      try {
+        const [categoryResult, courseResult] = await Promise.all([
+          apiFetch('courses/categories/'),
+          apiFetch('public/courses/?page=1&limit=6&featured=true'),
+        ]);
+
+        if (isCancelled) {
+          return;
+        }
+
+        if (categoryResult.response.ok) {
+          const rows = Array.isArray(categoryResult.payload)
+            ? categoryResult.payload
+            : categoryResult.payload?.data?.categories || categoryResult.payload?.data || [];
+          setDynamicCategories(
+            rows
+              .filter((category) => category.show_on_home !== false)
+              .slice(0, 5)
+              .map((category) => ({
+                label: category.name,
+                href: `/courses?category=${category.slug}`,
+                icon: categoryIconMap[category.icon_name] || Brain,
+                description: category.short_description || 'Explore focused lessons and projects',
+              })),
+          );
+        }
+
+        if (courseResult.response.ok) {
+          const courses = (courseResult.payload?.data?.courses || []).map(normalizeCourseCard).slice(0, 3);
+          setDynamicFeaturedCourses(
+            courses.map((course) => ({
+              label: course.title,
+              href: course.href,
+              description: course.description || `${course.featuredCard.durationValue} ${course.featuredCard.durationLabel} pathway`,
+            })),
+          );
+        }
+      } catch {
+        if (!isCancelled) {
+          setDynamicCategories([]);
+          setDynamicFeaturedCourses([]);
+        }
+      }
+    };
+
+    loadMenuData();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   const links = [
     { name: 'Home', href: '/' },
+    { name: 'Paths', href: '/paths' },
     { name: 'Blog', href: '/blog' },
     { name: 'Free Resources', href: '/free-resources' },
     { name: 'Request Callback', href: '/request-callback' },
   ];
 
-  const courseCategories = [
-    { label: 'UI/UX Design', href: '/courses?q=ui%2Fux', icon: PenTool, description: 'Interface craft, flows, and visual hierarchy' },
-    { label: 'Product Design', href: '/courses?q=product', icon: Layers, description: 'Research-led product thinking and critique' },
-    { label: 'Web Design', href: '/courses?q=web', icon: LayoutGrid, description: 'Responsive pages, systems, and launch polish' },
-    { label: 'Figma', href: '/courses?q=figma', icon: Sparkles, description: 'Prototyping, variants, and handoff workflows' },
-    { label: 'Design Systems', href: '/courses?q=design%20systems', icon: Brain, description: 'Reusable patterns for serious teams' },
-  ];
+  const courseCategories = useMemo(
+    () => (dynamicCategories.length > 0 ? dynamicCategories : fallbackCourseCategories),
+    [dynamicCategories],
+  );
 
-  const featuredCourses = [
-    { label: 'Beginner UI/UX', href: '/courses?q=beginner%20ui%2Fux', description: 'Start with layout, usability, and portfolio basics' },
-    { label: 'UX Research', href: '/courses?q=ux%20research', description: 'Learn interviews, synthesis, and product insight' },
-    { label: 'Portfolio Mastery', href: '/courses?q=portfolio', description: 'Shape case studies that hiring teams can scan' },
-  ];
+  const featuredCourses = useMemo(
+    () => (dynamicFeaturedCourses.length > 0 ? dynamicFeaturedCourses : fallbackFeaturedCourses),
+    [dynamicFeaturedCourses],
+  );
 
   const isActiveLink = (href) => {
     if (!href) {
@@ -123,6 +201,10 @@ const Navbar = () => {
 
     if (href === '/request-callback') {
       return location.pathname === '/request-callback';
+    }
+
+    if (href === '/paths') {
+      return location.pathname === '/paths';
     }
 
     if (href === '/dashboard') {
@@ -235,7 +317,7 @@ const Navbar = () => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.98 }}
                   transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                  className="fixed left-1/2 top-24 w-[min(920px,calc(100vw-48px))] -translate-x-1/2 overflow-hidden rounded-2xl border border-white/12 bg-[#070707]/86 shadow-[0_28px_90px_rgba(0,0,0,0.55)] backdrop-blur-2xl"
+                  className="fixed left-1/2 top-24 w-[min(920px,calc(100vw-48px))] -translate-x-1/2 overflow-hidden rounded-2xl border border-white/12 bg-[#050505]/95 shadow-[0_28px_90px_rgba(0,0,0,0.7)] backdrop-blur-2xl"
                 >
                   <div className="grid grid-cols-[1.05fr_1fr_0.95fr] gap-0">
                     <div className="border-r border-white/10 p-5">

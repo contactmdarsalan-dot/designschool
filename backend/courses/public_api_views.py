@@ -21,6 +21,7 @@ class PublicCourseListView(APIView):
         page = parse_positive_int(request.query_params.get('page', 1), default=1, upper_bound=100000)
         limit = parse_positive_int(request.query_params.get('limit', 24), default=24, upper_bound=100)
         query = request.query_params.get('q', '').strip()
+        category = request.query_params.get('category', '').strip()
         featured_only = request.query_params.get('featured')
 
         queryset = (
@@ -35,10 +36,17 @@ class PublicCourseListView(APIView):
                 Q(title__icontains=query)
                 | Q(short_description__icontains=query)
                 | Q(description__icontains=query)
+                | Q(category__name__icontains=query)
+                | Q(tags__text__icontains=query)
             )
+
+        if category:
+            queryset = queryset.filter(category__slug=category)
 
         if featured_only in {'1', 'true', 'True', 'yes'}:
             queryset = queryset.filter(is_featured=True)
+
+        queryset = queryset.distinct()
 
         total = queryset.count()
         offset = (page - 1) * limit

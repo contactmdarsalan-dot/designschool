@@ -1,10 +1,12 @@
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { isAdminUser, isAuthenticated } from './lib/auth';
+import { isAdminUser, isAuthenticated, isMentorUser } from './lib/auth';
 
 const Home = lazy(() => import('./pages/Home.jsx'));
 const CoursesPage = lazy(() => import('./pages/CoursesPage.jsx'));
 const CourseDetail = lazy(() => import('./pages/CourseDetail.jsx'));
+const LearningPathsPage = lazy(() => import('./pages/LearningPathsPage.jsx'));
+const LearningExperiencePage = lazy(() => import('./pages/LearningExperiencePage.jsx'));
 const BlogListPage = lazy(() => import('./pages/BlogListPage.jsx'));
 const BlogDetailPage = lazy(() => import('./pages/BlogDetailPage.jsx'));
 const FreeResourcesPage = lazy(() => import('./pages/FreeResourcesPage.jsx'));
@@ -22,7 +24,9 @@ const StudentRecordingsPage = lazy(() => import('./pages/StudentRecordingsPage.j
 const StudentVideoPlayerPage = lazy(() => import('./pages/StudentVideoPlayerPage.jsx'));
 const StudentAttendancePage = lazy(() => import('./pages/StudentAttendancePage.jsx'));
 const StudentCertificatesPage = lazy(() => import('./pages/StudentCertificatesPage.jsx'));
+const StudentNotificationsPage = lazy(() => import('./pages/StudentNotificationsPage.jsx'));
 const StudentProfilePage = lazy(() => import('./pages/StudentProfilePage.jsx'));
+const InstructorPanelPage = lazy(() => import('./pages/InstructorPanelPage.jsx'));
 const AdminPanelPage = lazy(() => import('./pages/AdminPanelPage.jsx'));
 
 const ProtectedRoute = ({ children }) => {
@@ -37,6 +41,16 @@ const AdminRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
   if (!isAdminUser()) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+};
+
+const MentorRoute = ({ children }) => {
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  if (!isMentorUser()) {
     return <Navigate to="/dashboard" replace />;
   }
   return children;
@@ -58,6 +72,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/courses" element={<CoursesPage />} />
           <Route path="/courses/:id" element={<CourseDetail />} />
+          <Route path="/paths" element={<LearningPathsPage />} />
+          <Route path="/learn/:id" element={<LearningExperiencePage />} />
           <Route path="/blog" element={<BlogListPage />} />
           <Route path="/blog/:slug" element={<BlogDetailPage />} />
           <Route path="/free-resources" element={<FreeResourcesPage />} />
@@ -84,8 +100,17 @@ function App() {
             <Route path="recordings/:recordingId" element={<StudentVideoPlayerPage />} />
             <Route path="attendance" element={<StudentAttendancePage />} />
             <Route path="certificates" element={<StudentCertificatesPage />} />
+            <Route path="notifications" element={<StudentNotificationsPage />} />
             <Route path="profile" element={<StudentProfilePage />} />
           </Route>
+          <Route
+            path="/instructor-panel"
+            element={
+              <MentorRoute>
+                <InstructorPanelPage />
+              </MentorRoute>
+            }
+          />
           <Route
             path="/admin-panel"
             element={

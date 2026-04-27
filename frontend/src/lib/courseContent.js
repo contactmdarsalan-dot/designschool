@@ -4,14 +4,14 @@ const FALLBACK_THUMBNAIL =
 export const formatCurrency = (value) => {
   const amount = Number(value || 0);
   if (!Number.isFinite(amount)) {
-    return 'Rs.0';
+    return 'NPR 0';
   }
 
-  if (Math.abs(amount % 1) > 0) {
-    return `Rs.${amount.toFixed(2).replace(/\.?0+$/, '')}`;
-  }
-
-  return `Rs.${Math.round(amount)}`;
+  return new Intl.NumberFormat('en-NP', {
+    style: 'currency',
+    currency: 'NPR',
+    maximumFractionDigits: Math.abs(amount % 1) > 0 ? 2 : 0,
+  }).format(amount);
 };
 
 const normalizeDiscount = (course) => {
@@ -63,6 +63,7 @@ export const normalizeCourseCard = (course) => {
     description: course?.shortDescription || course?.description || course?.metaData?.description || '',
     thumbnail,
     tags,
+    category: course?.category || null,
     language: course?.languageLabel || course?.metaData?.language || course?.language || 'English',
     type: course?.type || 'live',
     price,

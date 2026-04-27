@@ -12,7 +12,7 @@ import {
   Phone,
   Rocket,
 } from 'lucide-react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import Navbar from '../components/sheryians/Navbar';
 import Footer from '../components/sheryians/Footer';
 import { apiFetch } from '../lib/api';
@@ -163,6 +163,28 @@ const CourseModuleItem = ({ module, index, isOpen, onToggle }) => {
                   <p>{item}</p>
                 </div>
               ))}
+              {(module.lessons || []).length > 0 ? (
+                <div className="mt-5 space-y-3 border-t border-black/10 pt-5">
+                  {module.lessons.map((lesson, lessonIndex) => (
+                    <div
+                      key={lesson.id || `${lesson.title}-${lessonIndex}`}
+                      className="rounded-2xl border border-black/10 bg-[#f7f7f7] p-4"
+                    >
+                      <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.14em] text-emerald-700">
+                        <span>Lesson {lessonIndex + 1}</span>
+                        <span>/</span>
+                        <span>{lesson.type || lesson.lesson_type || 'article'}</span>
+                        <span>/</span>
+                        <span>{lesson.xpReward || lesson.xp_reward || 10} XP</span>
+                      </div>
+                      <p className="mt-2 text-lg font-semibold text-[#111827]">{lesson.title}</p>
+                      {lesson.summary ? (
+                        <p className="mt-1 text-sm leading-6 text-[#4A5565]">{lesson.summary}</p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </motion.div>
         ) : null}
@@ -524,6 +546,14 @@ const CourseDetail = () => {
                 Join Course Now
                 <ArrowRight className="h-5 w-5" />
               </a>
+
+              <Link
+                to={`/learn/${course.identifier}`}
+                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/[0.04] px-6 py-4 text-lg font-semibold text-white transition hover:border-emerald-300/60"
+              >
+                Open Learning Room
+                <ArrowRight className="h-5 w-5" />
+              </Link>
 
               <a
                 href={enrollmentHref}

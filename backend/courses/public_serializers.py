@@ -159,6 +159,7 @@ class PublicCourseListSerializer(serializers.ModelSerializer):
     isFeatured = serializers.BooleanField(source='is_featured')
     featuredOrder = serializers.IntegerField(source='featured_order')
     featuredCard = serializers.SerializerMethodField()
+    category = serializers.SerializerMethodField()
     metaData = serializers.SerializerMethodField()
 
     class Meta:
@@ -185,6 +186,7 @@ class PublicCourseListSerializer(serializers.ModelSerializer):
             'isFeatured',
             'featuredOrder',
             'featuredCard',
+            'category',
             'metaData',
         )
 
@@ -239,6 +241,14 @@ class PublicCourseListSerializer(serializers.ModelSerializer):
             'durationLabel': duration_label,
             'certificationValue': 'Yes' if obj.certificate_available else 'No',
             'certificationLabel': 'Certified',
+        }
+
+    def get_category(self, obj):
+        if not obj.category:
+            return None
+        return {
+            'name': obj.category.name,
+            'slug': obj.category.slug,
         }
 
     def get_metaData(self, obj):

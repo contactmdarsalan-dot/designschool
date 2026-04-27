@@ -89,6 +89,22 @@ class PublicCourseApiTests(APITestCase):
         self.assertEqual(payload[0]['tags'], ['React'])
         self.assertEqual(payload[1]['title'], regular.title)
 
+    def test_public_course_list_filters_by_query_and_category(self):
+        design_category = Category.objects.create(name='Design')
+        design_course = self.create_course(title='UX Research Sprint', category=design_category)
+        self.create_course(title='Backend APIs')
+
+        response = self.client.get(
+            reverse('public_courses_list'),
+            {'q': 'research', 'category': design_category.slug},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()['data']['courses']
+        self.assertEqual(len(payload), 1)
+        self.assertEqual(payload[0]['title'], design_course.title)
+        self.assertEqual(payload[0]['category']['slug'], design_category.slug)
+
     def test_public_course_detail_keeps_requirements_separate_from_curriculum(self):
         course = self.create_course(title='Structured Course')
         Requirement.objects.create(course=course, text='Laptop')
